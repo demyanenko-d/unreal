@@ -1,14 +1,14 @@
 #include "std.h"
 #include "emul.h"
 #include "vars.h"
-#include "dx.h"
-#include "tape.h"
-#include "atm.h"
+#include "engine/video/dx.h"
+#include "engine/loaders/tape.h"
+#include "hardware/clones/atm.h"
 #include "memory.h"
 #include "input.h"
 #include "inputpc.h"
 #include "debugger/debug.h"
-#include "util.h"
+#include "engine/utils/util.h"
 
 u8 pastekeys[0x80-0x20] =
 {

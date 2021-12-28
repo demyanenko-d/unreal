@@ -1,9 +1,9 @@
 #include "std.h"
 #include "emul.h"
 #include "vars.h"
-#include "tsconf.h"
+#include "hardware/clones/tsconf.h"
 #include "memory.h"
-#include "util.h"
+#include "engine/utils/util.h"
 
 // input: ports 7FFD,1FFD,DFFD,FFF7,FF77,EFF7, flags CF_TRDOS,CF_CACHEON
 void set_banks()

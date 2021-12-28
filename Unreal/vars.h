@@ -1,7 +1,7 @@
 #pragma once
 #include "emul.h"
-#include "sndchip.h"
-#include "sound/ayx32.h"
+#include "engine/audio/sndchip.h"
+#include "hardware/sound/ayx32.h"
 #include "debugger/debug.h"
 
 constexpr auto romled_time = 16;

@@ -4,18 +4,18 @@
 #include "memory.h"
 #include "debugger/debug.h"
 #include "debugger/dbglabls.h"
-#include "draw.h"
-#include "dx.h"
-#include "fontatm2.h"
-#include "snapshot.h"
-#include "sound.h"
-#include "sdcard.h"
-#include "zc.h"
-#include "atm.h"
-#include "util.h"
+#include "engine/video/draw.h"
+#include "engine/video/dx.h"
+#include "engine/fonts/fontatm2.h"
+#include "engine/loaders/snapshot.h"
+#include "engine/audio/sound.h"
+#include "hardware/sdcard.h"
+#include "hardware/zc.h"
+#include "hardware/clones/atm.h"
+#include "engine/utils/util.h"
 #include "config.h"
 
-#include "sound/dev_moonsound.h"
+#include "hardware/sound/dev_moonsound.h"
 
 char load_errors;
 const char* SSHOT_EXT[] = { "scr", "bmp", "png", "gif" };

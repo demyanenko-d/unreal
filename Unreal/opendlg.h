@@ -1,4 +1,4 @@
 #pragma once
 
-int GetSnapshotFileName(OPENFILENAME *ofn, int save);
+int get_snapshot_file_name(OPENFILENAME *ofn, int save);
 

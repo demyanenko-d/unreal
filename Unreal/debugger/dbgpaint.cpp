@@ -3,9 +3,9 @@
 #include "vars.h"
 #include "debug.h"
 #include "dbgpaint.h"
-#include "dx.h"
-#include "font16.h"
-#include "util.h"
+#include "engine/video/dx.h"
+#include "engine/fonts/font16.h"
+#include "engine/utils/util.h"
 
 u8 txtscr[debug_text_width * debug_text_height * 2];
 

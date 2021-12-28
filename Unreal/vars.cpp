@@ -4,15 +4,15 @@
 #include "vars.h"
 #include "debugger/debug.h"
 #include "memory.h"
-#include "gsz80.h"
-#include "z80.h"
-#include "util.h"
-#include "sndcounter.h"
-#include "sound/ayx32.h"
+#include "hardware/gs/gsz80.h"
+#include "hardware/z80/z80.h"
+#include "engine/utils/util.h"
+#include "engine/audio/sndcounter.h"
+#include "hardware/sound/ayx32.h"
 
 namespace z80fast
 {
-#include "z80_main.h"
+#include "hardware/z80/z80_main.h"
 }
 
 int fmsoundon0=4; //Alone Coder
@@ -35,15 +35,6 @@ void __cdecl SetLastT();
 void out(unsigned port, u8 val);
 u8 in(unsigned port);
 
-/*
-u8 TMainZ80::rm(unsigned addr) { return z80fast::rm(addr); }
-
-u8 TMainZ80::dbgrm(unsigned addr) { return ::rmdbg(addr); }
-
-void TMainZ80::wm(unsigned addr, u8 val) { z80fast::wm(addr, val); }
-
-void TMainZ80::dbgwm(unsigned addr, u8 val) { ::wmdbg(addr, val); }
-*/
 u8 *TMainZ80::DirectMem(unsigned addr) const
 {
     return am_r(addr);

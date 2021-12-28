@@ -1,14 +1,14 @@
 #include "std.h"
 #include "emul.h"
 #include "vars.h"
-#include "font.h"
-#include "gs.h"
-#include "tape.h"
-#include "draw.h"
+#include "engine/fonts/font.h"
+#include "hardware/gs/gs.h"
+#include "engine/loaders/tape.h"
+#include "engine/video/draw.h"
 #include "debugger/debug.h"
 #include "debugger/dbgbpx.h"
 #include "memory.h"
-#include "util.h"
+#include "engine/utils/util.h"
 
 extern VCTR vid;
 extern CACHE_ALIGNED u32 vbuf[2][sizeof_vbuf];

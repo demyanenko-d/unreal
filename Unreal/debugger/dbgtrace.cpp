@@ -7,10 +7,10 @@
 #include "dbgpaint.h"
 #include "dbgcmd.h"
 #include "memory.h"
-#include "z80asm.h"
-#include "op_system.h"
-#include "util.h"
-#include "draw.h"
+#include "hardware/z80/z80asm.h"
+#include "hardware/z80/op_system.h"
+#include "engine/utils/util.h"
+#include "engine/video/draw.h"
 #include "emulkeys.h"
 
 extern VCTR vid;

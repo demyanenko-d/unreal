@@ -2,24 +2,24 @@
 #include "emul.h"
 #include "vars.h"
 #include "config.h"
-#include "dx.h"
-#include "iehelp.h"
-#include "gs.h"
+#include "engine/video/dx.h"
+#include "engine/utils/iehelp.h"
+#include "hardware/gs/gs.h"
 #include "leds.h"
-#include "tape.h"
+#include "engine/loaders/tape.h"
 #include "emulkeys.h"
 #include "init.h"
-#include "snapshot.h"
-#include "savesnd.h"
-#include "wd93dat.h"
-#include "tables.h"
+#include "engine/loaders/snapshot.h"
+#include "engine/audio/savesnd.h"
+#include "hardware/wd93/wd93dat.h"
+#include "hardware/z80/tables.h"
 #include "debugger/dbgbpx.h"
 #include "debugger/dbglabls.h"
-#include "util.h"
-#include "getopt.h"
+#include "engine/utils/util.h"
+#include "engine/utils/getopt.h"
 #include "debugger/debug.h"
-#include "visuals.h"
-#include "ft812.h"
+#include "hardware/clones/visuals.h"
+#include "hardware/ft812.h"
 
 void cpu_info()
 {
@@ -180,7 +180,7 @@ void __declspec(noreturn) exit()
    zf232.zf_close();
    done_ie_help();
    done_bpx();
-   GdiplusShutdown();
+   gdiplus_shutdown();
 
 //   timeEndPeriod(1);
    if (ay[1].Chip2203) YM2203Shutdown(ay[1].Chip2203); //Dexus

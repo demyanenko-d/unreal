@@ -1,9 +1,10 @@
-#include "std.h"
-#include "resource.h"
-#include "emul.h"
-#include "vars.h"
-#include "gui.h"
-#include "util.h"
+#include <std.h>
+
+#include <emul.h>
+#include <gui.h>
+#include <resource.h>
+#include <vars.h>
+#include <engine/utils/util.h>
 
 struct FILEPREVIEWINFO
 {
@@ -12,31 +13,31 @@ struct FILEPREVIEWINFO
    struct { HWND h; } dlg;
    struct { HWND h; } innerdlg;
 
-   void OnResize();
-   void OnChange();
+   void on_resize();
+   void on_change() const;
 
-   void PreviewTRD(char *filename);
-   void PreviewSCL(char *filename);
-   void Preview(u8 *cat);
+   void preview_trd(const char *filename) const;
+   void preview_scl(const char *filename) const;
+   void preview(u8 *cat) const;
 
-} FilePreviewInfo;
+} file_preview_info;
 
-void FILEPREVIEWINFO::OnResize()
+void FILEPREVIEWINFO::on_resize()
 {
-   const int dlgbase = 280;
-   const int listbase = 163;
+   constexpr int dlgbase = 280;
+   constexpr int listbase = 163;
 
    RECT dlgrc; GetWindowRect(dlg.h, &dlgrc);
    list.dy = (dlgrc.bottom - dlgrc.top) - dlgbase + listbase;
 
-   SetWindowPos(list.h, 0, 0, 0, list.dx, list.dy,
+   SetWindowPos(list.h, nullptr, 0, 0, list.dx, list.dy,
                   SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
-void FILEPREVIEWINFO::OnChange()
+void FILEPREVIEWINFO::on_change() const
 {
    char filename[512];
-   int r = SendMessage(dlg.h, CDM_GETFILEPATH, sizeof(filename), (LPARAM) filename);
+   const int r = SendMessage(dlg.h, CDM_GETFILEPATH, sizeof(filename), LPARAM(filename));
    SendMessage(list.h, LVM_DELETEALLITEMS, 0, 0);
    if (r < 0 || (GetFileAttributes(filename) & FILE_ATTRIBUTE_DIRECTORY)) return;
 
@@ -53,15 +54,15 @@ void FILEPREVIEWINFO::OnChange()
    if (!ext) return;
    ext++;
 
-   if (!stricmp(ext, "trd")) PreviewTRD(filename);
-   if (!stricmp(ext, "scl")) PreviewSCL(filename);
+   if (!stricmp(ext, "trd")) preview_trd(filename);
+   if (!stricmp(ext, "scl")) preview_scl(filename);
 }
 
-void FILEPREVIEWINFO::Preview(u8 *cat)
+void FILEPREVIEWINFO::preview(u8 *cat) const
 {
    ::dlg = innerdlg.h;
-   u8 bas = getcheck(IDC_PREVIEW_BASIC);
-   u8 del = getcheck(IDC_PREVIEW_ERASED);
+   const u8 bas = getcheck(IDC_PREVIEW_BASIC);
+   const u8 del = getcheck(IDC_PREVIEW_ERASED);
 
    int count = 0;
    char fn[10];
@@ -78,39 +79,39 @@ void FILEPREVIEWINFO::Preview(u8 *cat)
       memcpy(fn, cat+p, 8); fn[8] = 0;
       item.iItem = count++;
       item.iSubItem = 0;
-      item.iItem = SendMessage(list.h, LVM_INSERTITEM, 0, (LPARAM) &item);
+      item.iItem = SendMessage(list.h, LVM_INSERTITEM, 0, LPARAM(&item));
 
       fn[0] = cat[p+8]; fn[1] = 0;
       item.iSubItem = 1;
-      SendMessage(list.h, LVM_SETITEM, 0, (LPARAM) &item);
+      SendMessage(list.h, LVM_SETITEM, 0, LPARAM(&item));
 
       sprintf(fn, "%d", cat[p+13]);
       item.iSubItem = 2;
-      SendMessage(list.h, LVM_SETITEM, 0, (LPARAM) &item);
+      SendMessage(list.h, LVM_SETITEM, 0, LPARAM(&item));
    }
 }
 
-void FILEPREVIEWINFO::PreviewTRD(char *filename)
+void FILEPREVIEWINFO::preview_trd(const char *filename) const
 {
    u8 cat[0x800];
    FILE *ff = fopen(filename, "rb");
-   int sz = fread(cat, 1, 0x800, ff);
+   const int sz = fread(cat, 1, 0x800, ff);
    fclose(ff);
    if (sz != 0x800) return;
-   Preview(cat);
+   preview(cat);
 }
 
-void FILEPREVIEWINFO::PreviewSCL(char *filename)
+void FILEPREVIEWINFO::preview_scl(const char *filename) const
 {
    u8 cat[0x800] = { 0 };
    u8 hdr[16];
 
-   FILE *ff = fopen(filename, "rb");
+   const auto ff = fopen(filename, "rb");
    unsigned sz = fread(hdr, 1, 9, ff), count = 0;
 
    if (sz == 9 && !memcmp(hdr, "SINCLAIR", 8)) {
-      unsigned max = hdr[8]; sz = max*14;
-      u8 *cat1 = (u8*)alloca(sz);
+	   const unsigned max = hdr[8]; sz = max*14;
+      const auto cat1 = (u8*)alloca(sz);
       if (fread(cat1, 1, sz, ff) == sz) {
          for (unsigned i = 0; i < sz; i += 14) {
             memcpy(cat+count*0x10, cat1+i, 14);
@@ -120,68 +121,68 @@ void FILEPREVIEWINFO::PreviewSCL(char *filename)
    }
 
    fclose(ff);
-   if (count) Preview(cat);
+   if (count) preview(cat);
 }
 
-UINT_PTR CALLBACK PreviewDlgProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp)
+UINT_PTR CALLBACK PreviewDlgProc(const HWND dlg, const UINT msg, const WPARAM wp, const LPARAM lp)
 {
    switch (msg)
    {
       case WM_INITDIALOG:
       {
-         FilePreviewInfo.ofn = (OPENFILENAME*)lp;
-         FilePreviewInfo.innerdlg.h = dlg;
-         FilePreviewInfo.dlg.h = GetParent(dlg);
-         FilePreviewInfo.list.h = GetDlgItem(dlg, IDC_PREVIEW_BOX);
+         file_preview_info.ofn = (OPENFILENAME*)lp;
+         file_preview_info.innerdlg.h = dlg;
+         file_preview_info.dlg.h = GetParent(dlg);
+         file_preview_info.list.h = GetDlgItem(dlg, IDC_PREVIEW_BOX);
 
-         unsigned exflags = LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT;
-         SendMessage(FilePreviewInfo.list.h, LVM_SETEXTENDEDLISTVIEWSTYLE, exflags, exflags);
+         constexpr auto exflags = LVS_EX_HEADERDRAGDROP | LVS_EX_FULLROWSELECT;
+         SendMessage(file_preview_info.list.h, LVM_SETEXTENDEDLISTVIEWSTYLE, exflags, exflags);
 
-         LVCOLUMN sizeCol;
-         sizeCol.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-         sizeCol.fmt = LVCFMT_LEFT;
+         LVCOLUMN size_col;
+         size_col.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+         size_col.fmt = LVCFMT_LEFT;
 
-         sizeCol.cx = 80;
-         sizeCol.pszText = PSTR("Filename");
-         SendMessage(FilePreviewInfo.list.h, LVM_INSERTCOLUMN, 0, (LPARAM)&sizeCol);
+         size_col.cx = 80;
+         size_col.pszText = PSTR("Filename");
+         SendMessage(file_preview_info.list.h, LVM_INSERTCOLUMN, 0, LPARAM(&size_col));
 
-         sizeCol.cx = 40;
-         sizeCol.pszText = PSTR("Ext");
-         SendMessage(FilePreviewInfo.list.h, LVM_INSERTCOLUMN, 1, (LPARAM)&sizeCol);
+         size_col.cx = 40;
+         size_col.pszText = PSTR("Ext");
+         SendMessage(file_preview_info.list.h, LVM_INSERTCOLUMN, 1, LPARAM(&size_col));
 
-         sizeCol.cx = 50;
-         sizeCol.pszText = PSTR("Size");
-         SendMessage(FilePreviewInfo.list.h, LVM_INSERTCOLUMN, 2, (LPARAM)&sizeCol);
+         size_col.cx = 50;
+         size_col.pszText = PSTR("Size");
+         SendMessage(file_preview_info.list.h, LVM_INSERTCOLUMN, 2, LPARAM(&size_col));
 
-         HFONT fnt = (HFONT)GetStockObject(OEM_FIXED_FONT);
-         SendMessage(FilePreviewInfo.list.h, WM_SETFONT, (WPARAM)fnt, 0);
+         auto fnt = HFONT(GetStockObject(OEM_FIXED_FONT));
+         SendMessage(file_preview_info.list.h, WM_SETFONT, WPARAM(fnt), 0);
 
-         RECT rc; GetWindowRect(FilePreviewInfo.list.h, &rc);
-         FilePreviewInfo.list.dx = rc.right - rc.left;
-         FilePreviewInfo.list.dy = rc.bottom - rc.top;
+         RECT rc; GetWindowRect(file_preview_info.list.h, &rc);
+         file_preview_info.list.dx = rc.right - rc.left;
+         file_preview_info.list.dy = rc.bottom - rc.top;
 
          break;
       }
 
       case WM_COMMAND:
          if (LOWORD(wp) == IDC_PREVIEW_BASIC || LOWORD(wp) == IDC_PREVIEW_ERASED)
-            FilePreviewInfo.OnChange();
+            file_preview_info.on_change();
          break;
 
       case WM_SIZE:
-         FilePreviewInfo.OnResize();
+         file_preview_info.on_resize();
          break;
 
       case WM_NOTIFY:
          if (((OFNOTIFY*)lp)->hdr.code == CDN_SELCHANGE)
-            FilePreviewInfo.OnChange();
+            file_preview_info.on_change();
          break;
-
+     default: ;
    }
    return 0;
 }
 
-int GetSnapshotFileName(OPENFILENAME *ofn, int save)
+int get_snapshot_file_name(OPENFILENAME *ofn, int save)
 {
    ofn->Flags |= save? OFN_PATHMUSTEXIST : OFN_FILEMUSTEXIST;
    ofn->Flags |= OFN_HIDEREADONLY | OFN_EXPLORER | OFN_NOCHANGEDIR | OFN_ENABLESIZING;
@@ -195,20 +196,20 @@ int GetSnapshotFileName(OPENFILENAME *ofn, int save)
    ofn->lpTemplateName    = MAKEINTRESOURCE(IDD_FILEPREVIEW);
    ofn->lpstrInitialDir   = temp.SnapDir;
 
-   BOOL res = save? GetSaveFileName(ofn) : GetOpenFileName(ofn);
+   const BOOL res = save? GetSaveFileName(ofn) : GetOpenFileName(ofn);
 
    if (res)
    {
        strcpy(temp.SnapDir, ofn->lpstrFile);
-       char *Ptr = strrchr(temp.SnapDir, '\\');
-       if (Ptr)
-        *Ptr = 0;
+       char *ptr = strrchr(temp.SnapDir, '\\');
+       if (ptr)
+        *ptr = 0;
        return res;
    }
-   DWORD errcode = CommDlgExtendedError();
+   const DWORD errcode = CommDlgExtendedError();
    if (!errcode) return 0;
 
    color(CONSCLR_ERROR);
-   printf("Error while selecting file. Code is 0x%08X\n", errcode);
+   printf("Error while selecting file. Code is 0x%08lX\n", errcode);
    return 0;
 }

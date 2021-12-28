@@ -1,7 +1,7 @@
 #include "std.h"
 #include "emul.h"
 #include "vars.h"
-#include "draw.h"
+#include "engine/video/draw.h"
 #include "debug.h"
 #include "dbgpaint.h"
 #include "dbgmem.h"
@@ -9,7 +9,7 @@
 #include "dbgoth.h"
 #include "memory.h"
 #include "gui.h"
-#include "util.h"
+#include "engine/utils/util.h"
 
 void out(unsigned port, u8 val);
 

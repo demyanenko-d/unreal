@@ -3,8 +3,8 @@
 #include "emul.h"
 #include "vars.h"
 #include "gui.h"
-#include "dx.h"
-#include "util.h"
+#include "engine/video/dx.h"
+#include "engine/utils/util.h"
 
 struct CHEATDLG
 {

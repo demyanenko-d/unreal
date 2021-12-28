@@ -1,6 +1,6 @@
 #pragma once
 #include "sysdefs.h"
-#include "visuals.h"
+#include "hardware/clones/visuals.h"
 
 extern const char *lastpage;
 

@@ -4,7 +4,7 @@
 #include "vars.h"
 #include "debug.h"
 #include "dbgpaint.h"
-#include "util.h"
+#include "engine/utils/util.h"
 #include "memory.h" // for benter()
 
 namespace z80dbg

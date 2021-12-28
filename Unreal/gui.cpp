@@ -3,13 +3,13 @@
 #include "emul.h"
 #include "vars.h"
 #include "config.h"
-#include "draw.h"
-#include "dx.h"
-#include "tape.h"
-#include "snapshot.h"
+#include "engine/video/draw.h"
+#include "engine/video/dx.h"
+#include "engine/loaders/tape.h"
+#include "engine/loaders/snapshot.h"
 #include "leds.h"
-#include "util.h"
-#include "tsconf.h"
+#include "engine/utils/util.h"
+#include "hardware/clones/tsconf.h"
 
 void setcheck(unsigned ID, u8 state = 1)
 {
