@@ -62,6 +62,6 @@ void debug_cond_check(Z80 *cpu);
 void render_small(u8 *dst, unsigned pitch);
 
 int loadsnap(char *filename);
-u8 what_is(char *filename);
+u8 what_is(const char *filename);
 
 u8 getcheck(unsigned ID);

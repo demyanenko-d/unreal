@@ -136,7 +136,7 @@ typedef void (*TVideoSaver)();
 
 extern TVideoSaver VideoSaver;
 
-int loadsnap(char *filename);
+int loadsnap(const char *filename);
 int writeSNA(FILE *ff);
 void opensnap(int index);
 void savesnap(int diskindex);

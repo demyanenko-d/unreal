@@ -691,5 +691,5 @@ extern unsigned frametime;
 extern int nmi_pending;
 
 bool ConfirmExit();
-BOOL WINAPI ConsoleHandler(DWORD CtrlType);
+BOOL WINAPI ConsoleHandler(DWORD ctrl_type);
 void showhelp(const char* anchor = 0);

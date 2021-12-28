@@ -26,7 +26,7 @@ int readSNA128();
 int readSPG();
 int readZ80();
 int writeSNA(FILE*);
-int load_arc(char *fname);
+int load_arc(const char *fname);
 
 bool GdiplusStartup()
 {
@@ -62,7 +62,7 @@ void gdiplus_shutdown()
     if (gdiplusToken) GdiplusShutdown(gdiplusToken);
 }
 
-u8 what_is(char *filename)
+u8 what_is(const char *filename)
 {
    FILE *ff = fopen(filename, "rb");
    if (!ff) return snNOFILE;
@@ -70,7 +70,7 @@ u8 what_is(char *filename)
    fclose(ff);
    if (snapsize == sizeof snbuf) return snTOOLARGE;
    u8 type = snUNKNOWN;
-   char *ptr = strrchr(filename, '.');
+   const char *ptr = strrchr(filename, '.');
    unsigned ext = ptr? (*(int*)(ptr+1) | 0x20202020) : 0;
    if (snapsize < 32) return type;
 
@@ -112,7 +112,7 @@ u8 what_is(char *filename)
    return type;
 }
 
-int loadsnap(char *filename)
+int loadsnap(const char *filename)
 {
    if (load_arc(filename))
        return 1;
@@ -548,9 +548,9 @@ bool filename_ok(char *fname)
    return 1;
 }
 
-int load_arc(char *fname)
+int load_arc(const char *fname)
 {
-   char *ext = strrchr(fname, '.'); if (!ext) return 0;
+   const char *ext = strrchr(fname, '.'); if (!ext) return 0;
    ext++;
    char *cmdtmp, done = 0;
    for (char *x = arcbuffer; *x; x = cmdtmp + strlen(cmdtmp)+1) {

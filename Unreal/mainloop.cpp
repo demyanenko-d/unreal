@@ -79,17 +79,17 @@ void do_idle()
    for (;;)
    {
       asm_pause();
-      volatile u64 cpu = rdtsc();
+      const volatile u64 cpu = rdtsc();
       if ((cpu-last_cpu) >= temp.ticks_frame)
           break;
 
       if (conf.sleepidle)
       {
-          ULONG Delay = ULONG(((temp.ticks_frame - (cpu-last_cpu)) * 1000ULL) / temp.cpufq);
+	      const ULONG delay = ULONG(((temp.ticks_frame - (cpu-last_cpu)) * 1000ULL) / temp.cpufq);
 
-          if (Delay != 0)
+          if (delay != 0)
           {
-              Sleep(Delay);
+              Sleep(delay);
  //             printf("sleep: %lu\n", Delay);
               break;
           }
@@ -98,10 +98,10 @@ void do_idle()
    last_cpu = rdtsc();
 }
 
-void mainloop(const bool &Exit)
+void mainloop(const bool &exit)
 {
    u8 skipped = 0;
-   while (!Exit)
+   while (!exit)
 	{
 		temp.sndblock = !conf.sound.enabled;
 		temp.inputblock = temp.vidblock && conf.sound.enabled;
