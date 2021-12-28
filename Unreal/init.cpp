@@ -86,7 +86,7 @@ void init_all(int argc, char **argv)
            labels = optarg;
        }
 
-   temp.Minimized = false;
+   temp.minimized = false;
 
    init_z80tables();
    init_ie_help();
@@ -106,8 +106,8 @@ void init_all(int argc, char **argv)
    autoload();
    init_bpx(bpx);
    init_labels(labels);
-   temp.Gdiplus = GdiplusStartup();
-   if (!temp.Gdiplus)
+   temp.gdiplus = GdiplusStartup();
+   if (!temp.gdiplus)
    {
        color(CONSCLR_WARNING);
        printf("warning: gdiplus.dll was not loaded, only SCR and BMP screenshots available\n");

@@ -188,7 +188,7 @@ void make_colortab(char flash_active)
       colortab_s24[a] = color << 24;
    }
 #if 0
-   if (conf.mem_model == MM_ATM710 || conf.mem_model == MM_ATM3 || conf.mem_model == MM_ATM450)
+   if (conf.memmodel == atm710 || conf.memmodel == atm3 || conf.memmodel == atm450)
        atm_zc_tables(); // update with new flash bit
 #endif
 }
@@ -301,7 +301,7 @@ void atm_zc_tables() // atm,profi screens (use normal zx-flash)
    // atm palette mapping (port out to palette index)
    for (unsigned i = 0; i < 0x100; i++) {
       unsigned v = i ^ 0xFF, dst;
-      if (conf.mem_model == MM_ATM450)
+      if (conf.memmodel == atm450)
          dst = // ATM1: --grbGRB => Gg0Rr0Bb
                ((v & 0x20) << 1) | // g
                ((v & 0x10) >> 1) | // r
@@ -478,7 +478,7 @@ void pixel_tables()
    if (temp.obpp > 8 && conf.noflic) calc_noflic_16_32();
 
    if ((temp.rflags & (RF_DRIVER|RF_2X|RF_USEFONT))==(RF_DRIVER|RF_2X) && // render="double"
-       (conf.mem_model == MM_ATM450 || conf.mem_model == MM_ATM710 || conf.mem_model == MM_ATM3 || conf.mem_model == MM_PROFI))
+       (conf.memmodel == atm450 || conf.memmodel == atm710 || conf.memmodel == atm3 || conf.memmodel == profi))
       hires_sc_tables();
 }
 
@@ -531,7 +531,7 @@ void apply_video()
 
    load_ula_preset();
    temp.rflags = renders[conf.render].flags;
-   if (conf.use_comp_pal && (conf.mem_model == MM_ATM710 || conf.mem_model == MM_ATM3 || conf.mem_model == MM_ATM450 || conf.mem_model == MM_PROFI))
+   if (conf.use_comp_pal && (conf.memmodel == mem_model::atm710 || conf.memmodel == mem_model::atm3 || conf.memmodel == mem_model::atm450 || conf.memmodel == mem_model::profi))
    {
       temp.rflags |= RF_COMPPAL | RF_PALB;
       // disable palette noflic, only if it is really used
@@ -673,7 +673,7 @@ void update_screen()
         u32 t = vid.t_next; // store tact of video controller
         u32 vptr = vid.vptr;
         drawers[vid.mode].func(m);
-        if (conf.mem_model == MM_TSL) draw_ts(vptr);
+        if (conf.memmodel == mem_model::tsl) draw_ts(vptr);
         t = vid.t_next - t; // calculate tacts used by drawers func
         n -= t; vid.line_pos += (u16)t;
       }
@@ -708,7 +708,7 @@ void update_raypos(bool showleds) {
 void init_raster()
 {
 	// TSconf
-	if (conf.mem_model == MM_TSL)
+	if (conf.memmodel == mem_model::tsl)
 	{
 		vid.raster = raster[comp.ts.rres];
 		EnterCriticalSection(&tsu_toggle_cr); // wbcbz7 note: huhuhuhuhuhuh...dirty code :)
@@ -722,7 +722,7 @@ void init_raster()
 	u8 m = EFF7_4BPP | EFF7_HWMC;
 
 	// ATM 1
-	if ((conf.mem_model == MM_ATM450) && (((comp.aFE >> 5) & 3) != FF77_ZX))
+	if ((conf.memmodel == mem_model::atm450) && (((comp.aFE >> 5) & 3) != FF77_ZX))
 	{
 		vid.raster = raster[R_320_200];
 		if (((comp.aFE >> 5) & 3) == aFE_16) { vid.mode = M_ATM16; return; }
@@ -731,21 +731,21 @@ void init_raster()
 	}
 
 	// ATM 2 & 3
-	if ((conf.mem_model == MM_ATM710 || conf.mem_model == MM_ATM3) && ((comp.pFF77 & 7) != FF77_ZX))
+	if ((conf.memmodel == mem_model::atm710 || conf.memmodel == mem_model::atm3) && ((comp.pFF77 & 7) != FF77_ZX))
 	{
 		vid.raster = raster[R_320_200];
-		if (conf.mem_model == MM_ATM3 && (comp.pEFF7 & m)) { vid.mode = M_NUL; return; }	// EFF7 AlCo bits must be 00, or invalid mode
+		if (conf.memmodel == mem_model::atm3 && (comp.pEFF7 & m)) { vid.mode = M_NUL; return; }	// EFF7 AlCo bits must be 00, or invalid mode
 		if ((comp.pFF77 & 7) == FF77_16) { vid.mode = M_ATM16; return; }
 		if ((comp.pFF77 & 7) == FF77_MC) { vid.mode = M_ATMHR; return; }
 		if ((comp.pFF77 & 7) == FF77_TX) { vid.mode = M_ATMTX; return; }
-		if (conf.mem_model == MM_ATM3 && (comp.pFF77 & 7) == FF77_TL) { vid.mode = M_ATMTL; return; }
+		if (conf.memmodel == mem_model::atm3 && (comp.pFF77 & 7) == FF77_TL) { vid.mode = M_ATMTL; return; }
 		vid.mode = M_NUL; return;
 	}
 
 	vid.raster = raster[R_256_192];
 
 	// ATM 3 AlCo modes
-	if (conf.mem_model == MM_ATM3 && (comp.pEFF7 & m))
+	if (conf.memmodel == mem_model::atm3 && (comp.pEFF7 & m))
 	{
 		if ((comp.pEFF7 & m) == EFF7_4BPP) { vid.mode = M_P16; return; }
 		if ((comp.pEFF7 & m) == EFF7_HWMC) { vid.mode = M_PMC; return; }
@@ -754,7 +754,7 @@ void init_raster()
 
 	// Pentagon AlCo modes
 	m = EFF7_4BPP | EFF7_512 | EFF7_384 | EFF7_HWMC;
-	if (conf.mem_model == MM_PENTAGON && (comp.pEFF7 & m))
+	if (conf.memmodel == mem_model::pentagon && (comp.pEFF7 & m))
 	{
 		if ((comp.pEFF7 & m) == EFF7_4BPP) { vid.mode = M_P16; return; }
 		if ((comp.pEFF7 & m) == EFF7_HWMC) { vid.mode = M_PMC; return; }
@@ -763,13 +763,13 @@ void init_raster()
 		vid.mode = M_NUL; return;
 	}
 
-	if (conf.mem_model == MM_PROFI && (comp.pDFFD & 0x80))
+	if (conf.memmodel == mem_model::profi && (comp.pDFFD & 0x80))
 	{
 		vid.raster = raster[R_512_240];
 		vid.mode = M_PROFI; return;
 	}
 
-	if (conf.mem_model == MM_GMX && (comp.p7EFD & 0x08))
+	if (conf.memmodel == mem_model::gmx && (comp.p7EFD & 0x08))
 	{
 		vid.raster = raster[R_320_200];
 		vid.mode = M_GMX; return;
@@ -785,11 +785,11 @@ void init_frame()
    if (conf.noflic) vid.buf ^= 1;
 
    switch (conf.ray_paint_mode) {
-   case RAYDRAW_CLEAR:
+   case ray_paint_mode::clear:
        memset(vbuf[vid.buf], 0xFF000000, sizeof(u32)*sizeof_vbuf);          // alpha fix (doubt if it's really need)
        break;
 
-   case RAYDRAW_DIM:
+   case ray_paint_mode::dim:
        {
            // TODO: rewirte with SSE2
            auto *p = vbuf[vid.buf];

@@ -149,7 +149,7 @@ extern BORDSIZE bordersizes[];
 extern VOID_FUNC prebuffers[];
 extern TS_VDAC_NAME ts_vdac_names[];
 
-extern const TMemModel mem_model[N_MM_MODELS];
+extern const t_mem_model memmodel[(int)mem_model::n_models];
 
 extern zxkeymap zxk_maps[];
 extern const size_t zxk_maps_count;

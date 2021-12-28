@@ -260,34 +260,35 @@ void main_tapebrowser()
 void setup_dlg() {}
 #endif
 
-static const char *getrom(ROM_MODE page)
+static const char *getrom(rom_mode page)
 {
    switch (page) {
-      case RM_128: return "Basic 128";
-      case RM_SYS: return "Service ROM";
-      case RM_DOS: return "TR-DOS";
-      case RM_SOS: return "Basic 48";
-      case RM_CACHE: return "Cache";
+      case rom_mode::RM_128: return "Basic 128";
+      case rom_mode::RM_SYS: return "Service ROM";
+      case rom_mode::RM_DOS: return "TR-DOS";
+      case rom_mode::RM_SOS: return "Basic 48";
+      case rom_mode::RM_CACHE: return "Cache";
+   default: ;
    }
    return "???";
 }
 
-void m_reset(ROM_MODE page)
+void m_reset(rom_mode page)
 {
    sprintf(statusline, "Reset to %s", getrom(page)); statcnt = 50;
    nmi_pending = 0;
    cpu.nmi_in_progress = false;
    reset(page);
 }
-void main_reset128() { m_reset(RM_128); }
-void main_resetsys() { m_reset(RM_SYS); }
-void main_reset48() { m_reset(RM_SOS); comp.p7FFD = 0x30; comp.pEFF7 |= EFF7_LOCKMEM; /*Alone Coder*/}
-void main_resetbas() { m_reset(RM_SOS); }
-void main_resetdos() { if (conf.trdos_present) m_reset(RM_DOS); }
-void main_resetcache() { if (conf.cache) m_reset(RM_CACHE); }
-void main_reset() { m_reset((ROM_MODE)conf.reset_rom); }
+void main_reset128() { m_reset(rom_mode::RM_128); }
+void main_resetsys() { m_reset(rom_mode::RM_SYS); }
+void main_reset48() { m_reset(rom_mode::RM_SOS); comp.p7FFD = 0x30; comp.pEFF7 |= EFF7_LOCKMEM; /*Alone Coder*/}
+void main_resetbas() { m_reset(rom_mode::RM_SOS); }
+void main_resetdos() { if (conf.trdos_present) m_reset(rom_mode::RM_DOS); }
+void main_resetcache() { if (conf.cache) m_reset(rom_mode::RM_CACHE); }
+void main_reset() { m_reset((rom_mode)conf.reset_rom); }
 
-void m_nmi(ROM_MODE page)
+void m_nmi(rom_mode page)
 {
    set_mode(page);
    sprintf(statusline, "NMI to %s", getrom(page)); statcnt = 50;
@@ -303,22 +304,22 @@ void m_nmi(ROM_MODE page)
 void main_nmi()
 {
     nmi_pending  = 1;
-    if (conf.mem_model != MM_ATM3)
-        m_nmi(RM_NOCHANGE);
+    if (conf.memmodel != mem_model::atm3)
+        m_nmi(rom_mode::RM_NOCHANGE);
 }
 
 void main_nmidos()
 {
- if ((conf.mem_model == MM_PROFSCORP || conf.mem_model == MM_SCORP) &&
+ if ((conf.memmodel == mem_model::profscorp || conf.memmodel == mem_model::scorp) &&
    !(comp.flags & CF_TRDOS) && cpu.pc < 0x4000)
  {
      nmi_pending = conf.frame * 50; // 50 * 20ms
      return;
  }
- m_nmi(RM_DOS);
+ m_nmi(rom_mode::RM_DOS);
 }
 
-void main_nmicache() { m_nmi(RM_CACHE); }
+void main_nmicache() { m_nmi(rom_mode::RM_CACHE); }
 
 static void qsave(const char *fname) {
    char xx[0x200]; addpath(xx, fname);

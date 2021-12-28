@@ -658,7 +658,7 @@ void WD1793::out(u8 port, u8 val)
       seldrive = &fdd[drive];
       seldrive->t.clear();
 
-      if (conf.mem_model == MM_TSL && comp.ts.vdos)
+      if (conf.memmodel == mem_model::tsl && comp.ts.vdos)
         return;
 
       side = ~(val >> 4) & 1;

@@ -13,7 +13,7 @@ u8 rm(unsigned addr)
 #endif
 
 #ifdef MOD_GSZ80
-   if ((temp.gsdmaon!=0) && ( (conf.mem_model==MM_PENTAGON) || (conf.mem_model==MM_ATM3) ) && ((addr & 0xc000)==0) && ((comp.pEFF7 & EFF7_ROCACHE)==0))
+   if ((temp.gsdmaon!=0) && ( (conf.memmodel== mem_model::pentagon) || (conf.memmodel== mem_model::atm3) ) && ((addr & 0xc000)==0) && ((comp.pEFF7 & EFF7_ROCACHE)==0))
     {
      u8 *tmp;
      tmp = GSRAM_M+((temp.gsdmaaddr-1) & 0x1FFFFF);
@@ -29,7 +29,7 @@ u8 rm(unsigned addr)
   if (bankm[window] == BANKM_RAM)    // RAM hit
   {
         // TS-conf cache model
-    if (conf.mem_model == MM_TSL)
+    if (conf.memmodel == mem_model::tsl)
     {
             // pentevo version for 16 bit DRAM/cache
       u32 cached_address = (comp.ts.page[window] << 5) | ((addr >> 9) & 0x1F);  // {page[7:0], addr[13:9]}
@@ -87,7 +87,7 @@ void wm(unsigned addr, u8 val)
 #endif
 
 #ifdef MOD_GSZ80
-   if ((temp.gsdmaon!=0) && ( (conf.mem_model==MM_PENTAGON) || (conf.mem_model==MM_ATM3) ) && ((addr & 0xc000)==0))
+   if ((temp.gsdmaon!=0) && ( (conf.memmodel== mem_model::pentagon) || (conf.memmodel== mem_model::atm3) ) && ((addr & 0xc000)==0))
     {
      u8 *tmp;
      tmp = GSRAM_M+temp.gsdmaaddr;
@@ -106,7 +106,7 @@ void wm(unsigned addr, u8 val)
 #endif
 
   // write to FPGA mapped area
-  if ((conf.mem_model == MM_TSL) && (comp.ts.fm_en) && (((addr >> 12) & 0x0F) == comp.ts.fm_addr))
+  if ((conf.memmodel == mem_model::tsl) && (comp.ts.fm_en) && (((addr >> 12) & 0x0F) == comp.ts.fm_addr))
   {
     // 256 byte arrays
     if (((addr >> 8) & 0x0F) == TSF_REGS)
@@ -141,7 +141,7 @@ void wm(unsigned addr, u8 val)
   }
 
   // TS-conf cache model
-  if (conf.mem_model == MM_TSL)
+  if (conf.memmodel == mem_model::tsl)
   {
     // pentevo version for 16 bit DRAM/cache
         u16 cache_pointer = addr & 0x1FE;
@@ -149,7 +149,7 @@ void wm(unsigned addr, u8 val)
     vid.memcpucyc[cpu.t / 224]++;
   }
 
-   if ((conf.mem_model == MM_ATM3) && (comp.pBF & 4) /*&& ((addr & 0xF800) == 0)*/ ) // Разрешена загрузка шрифта для ATM3 // lvd: any addr is possible in ZXEVO
+   if ((conf.memmodel == mem_model::atm3) && (comp.pBF & 4) /*&& ((addr & 0xF800) == 0)*/ ) // Разрешена загрузка шрифта для ATM3 // lvd: any addr is possible in ZXEVO
    {
        unsigned idx = ((addr&0x07F8) >> 3) | ((addr & 7) << 8);
        fontatm2[idx] = val;
@@ -168,13 +168,13 @@ void wm(unsigned addr, u8 val)
 
 Z80INLINE u8 m1_cycle(Z80 *cpu)
 {
-   if ((conf.mem_model == MM_PENTAGON) &&
+   if ((conf.memmodel == mem_model::pentagon) &&
        ((comp.pEFF7 & (EFF7_CMOS | EFF7_4BPP)) == (EFF7_CMOS | EFF7_4BPP)))
        temp.offset_vscroll++;
-   if ((conf.mem_model == MM_PENTAGON) &&
+   if ((conf.memmodel == mem_model::pentagon) &&
       ((comp.pEFF7 & (EFF7_384 | EFF7_4BPP)) == (EFF7_384 | EFF7_4BPP)))
        temp.offset_hscroll++;
-   if (conf.mem_model == MM_TSL && comp.ts.vdos_m1) {
+   if (conf.memmodel == mem_model::tsl && comp.ts.vdos_m1) {
       comp.ts.vdos    = 1;
       comp.ts.vdos_m1 = 0;
       set_banks();
@@ -239,8 +239,8 @@ void Z80FAST step()
 
 /* [vv]
 //todo if (comp.turbo)cpu.t-=tbias[cpu.t-oldt]
-   if ( ((conf.mem_model == MM_PENTAGON) && ((comp.pEFF7 & EFF7_GIGASCREEN)==0)) ||
-       ((conf.mem_model == MM_ATM710) && (comp.pFF77 & 8)))
+   if ( ((conf.memmodel == pentagon) && ((comp.pEFF7 & EFF7_GIGASCREEN)==0)) ||
+       ((conf.memmodel == atm710) && (comp.pFF77 & 8)))
        cpu.t -= (cpu.t-oldt) >> 1; //0.37
 //~todo
 */
@@ -310,26 +310,26 @@ void z80loop_other()
   while (cpu.t < conf.frame)
   {
     // Baseconf NMI trap
-    if (conf.mem_model == MM_ATM3 && (comp.pBF & 0x10) && (cpu.pc == comp.pBD))
+    if (conf.memmodel == mem_model::atm3 && (comp.pBF & 0x10) && (cpu.pc == comp.pBD))
       nmi_pending = 1;
 
     // NMI processing
     if (nmi_pending)
     {
-      if (conf.mem_model == MM_ATM3)
+      if (conf.memmodel == mem_model::atm3)
       {
         nmi_pending = 0;
         cpu.nmi_in_progress = true;
         set_banks();
-        m_nmi(RM_NOCHANGE);
+        m_nmi(rom_mode::RM_NOCHANGE);
         continue;
       }
-      else if (conf.mem_model == MM_PROFSCORP || conf.mem_model == MM_SCORP)
+      else if (conf.memmodel == mem_model::profscorp || conf.memmodel == mem_model::scorp)
       {
         nmi_pending--;
         if (cpu.pc > 0x4000)
         {
-          m_nmi(RM_DOS);
+          m_nmi(rom_mode::RM_DOS);
           nmi_pending = 0;
         }
       }
@@ -340,7 +340,7 @@ void z80loop_other()
     // Baseconf NMI
     if (comp.pBE)
     {
-      if (conf.mem_model == MM_ATM3 && comp.pBE == 1)
+      if (conf.memmodel == mem_model::atm3 && comp.pBE == 1)
       {
         cpu.nmi_in_progress = false;
         set_banks();
@@ -376,7 +376,7 @@ void z80loop_other()
 
 void z80loop()
 {
-  if (conf.mem_model == MM_TSL)
+  if (conf.memmodel == mem_model::tsl)
     z80loop_TSL();
   else
     z80loop_other();

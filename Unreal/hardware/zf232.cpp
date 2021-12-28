@@ -662,7 +662,7 @@ u8 ZF232::read(u8 nreg)
 
   if (nreg == 0)
   { // read char from buffer
-   //if (conf.mem_model == MM_ATM3)  result = 0;
+   //if (conf.memmodel == atm3)  result = 0;
    if (rs_rhead != rs_rtail)
    {
     result = rs_reg[0] = rs_rcbuf[rs_rtail++];

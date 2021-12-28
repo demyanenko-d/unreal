@@ -17,7 +17,7 @@ void set_banks()
    // screen begining
    temp.base = memory + comp.ts.vpage * PAGE;
 /*
-   if (conf.mem_model == MM_QUORUM)
+   if (conf.memmodel == quorum)
        temp.base = memory + (comp.p80FD & 7) * 0x2000 + 5*PAGE;
 */
 
@@ -29,7 +29,7 @@ void set_banks()
 
    u8 *bank0, *bank3;
 
-	if (conf.mem_model == MM_GMX)
+	if (conf.memmodel == mem_model::gmx)
 	{
 		base_128_rom = ROM_BASE_M + ((comp.p7EFD>>4)&7) * 64*1024 + 0*PAGE;
 		base_sos_rom = ROM_BASE_M + ((comp.p7EFD>>4)&7) * 64*1024 + 1*PAGE;
@@ -44,9 +44,9 @@ void set_banks()
 
    unsigned bank = (comp.p7FFD & 7);
 
-   switch (conf.mem_model)
+   switch (conf.memmodel)
    {
-      case MM_PENTAGON:
+      case mem_model::pentagon:
          if (!(comp.pEFF7 & EFF7_LOCKMEM))
              bank |= (comp.p7FFD & 0x20) | (comp.p7FFD & 0xC0) >> 3; // 7FFD bits 657..210
 
@@ -56,13 +56,13 @@ void set_banks()
              bank0 = page_ram(0); //Alone Coder 0.36.4
          break;
 
-      case MM_PROFSCORP:
+      case mem_model::profscorp:
          membits[0x0100] &= ~MEMBITS_R;
          membits[0x0104] &= ~MEMBITS_R;
          membits[0x0108] &= ~MEMBITS_R;
          membits[0x010C] &= ~MEMBITS_R;
 
-      case MM_SCORP:
+      case mem_model::scorp:
          bank += ((comp.p1FFD & 0x10) >> 1) + ((comp.p1FFD & 0xC0) >> 2);
          bank3 = page_ram(bank & temp.ram_mask);
 
@@ -87,7 +87,7 @@ void set_banks()
             bank0 = base_sys_rom;
          if (comp.p1FFD & 1)
             bank0 = page_ram(0);
-         if (conf.mem_model == MM_PROFSCORP)
+         if (conf.memmodel == mem_model::profscorp)
          {
              if (bank0 == base_sys_rom)
                  comp.flags |= CF_PROFROM;
@@ -96,7 +96,7 @@ void set_banks()
          }
          break;
 
-	  case MM_GMX:
+	  case mem_model::gmx:
 			bank |= ((comp.p1FFD & 0x10) >> 1) | ((comp.pDFFD & 7) << 4);
 			bankw[2] = bankr[2] = RAM_BASE_M + ((comp.p78FD ^ 2) & temp.ram_mask)*PAGE;
 			bank3 = RAM_BASE_M + (bank & temp.ram_mask)*PAGE;
@@ -112,7 +112,7 @@ void set_banks()
 			//bank0 += ((comp.p7EFD >> 4) & 7)*PAGE;
 			break;
 
-      case MM_KAY:
+      case mem_model::kay:
       {
          bank += ((comp.p1FFD & 0x10) >> 1) + ((comp.p1FFD & 0x80) >> 3) + ((comp.p7FFD & 0x80) >> 2);
          bank3 = page_ram(bank & temp.ram_mask);
@@ -130,7 +130,7 @@ void set_banks()
          break;
       }
 
-      case MM_PROFI:
+      case mem_model::profi:
          bank += ((comp.pDFFD & 0x07) << 3); bank3 = page_ram(bank & temp.ram_mask);
          if (comp.pDFFD & 0x08) bankr[1] = bankw[1] = bank3, bank3 = page_ram(7);
          if (comp.pDFFD & 0x10) bank0 = page_ram(0);
@@ -138,7 +138,7 @@ void set_banks()
          if (comp.pDFFD & 0x40) bankr[2] = bankw[2] = page_ram(6);
          break;
 
-      case MM_ATM450:
+      case mem_model::atm450:
       {
          // RAM
          // original ATM uses D2 as ROM address extension, not RAM
@@ -168,7 +168,7 @@ void set_banks()
          break;
       }
 
-      case MM_TSL:
+      case mem_model::tsl:
 	  {
         u8 tmp;
 
@@ -207,11 +207,11 @@ void set_banks()
 	  }
       break;
 
-      case MM_ATM3:
+      case mem_model::atm3:
          if (comp.pBF & 1) // shaden
             comp.flags |= CF_DOSPORTS;
 
-      case MM_ATM710:
+      case mem_model::atm710:
       {
          if (!(comp.aFF77 & 0x200)) // ~cpm=0
             comp.flags |= CF_TRDOS;
@@ -229,7 +229,7 @@ void set_banks()
             u32 mem7ffd = (comp.p7FFD & 7) | ( (comp.p7FFD & 0xE0)>>2 );
             u32 mask7ffd = 0x07;
 
-            if (conf.mem_model==MM_ATM3 && (!(comp.pEFF7 & EFF7_LOCKMEM)))
+            if (conf.memmodel== mem_model::atm3 && (!(comp.pEFF7 & EFF7_LOCKMEM)))
                 mask7ffd = 0x3F;
 
             switch (comp.pFFF7[i+bank] & 0x300)
@@ -250,9 +250,9 @@ void set_banks()
          }
          bank0 = bankr[0]; bank3 = bankr[3];
 
-//         if (conf.mem_model == MM_ATM3 && cpu.nmi_in_progress)
+//         if (conf.memmodel == atm3 && cpu.nmi_in_progress)
 //             bank0 = page_ram(0xFF);
-        if ( conf.mem_model==MM_ATM3 ) // lvd added pentevo RAM0 to bank0 feature if EFF7_ROCACHE is set
+        if ( conf.memmodel== mem_model::atm3 ) // lvd added pentevo RAM0 to bank0 feature if EFF7_ROCACHE is set
         {
             if ( cpu.nmi_in_progress )
                 bank0 = page_ram(0xFF);
@@ -263,7 +263,7 @@ void set_banks()
       }
       break;
 
-      case MM_PLUS3:
+      case mem_model::plus3:
       {
           if (comp.p7FFD & 0x20) // paging disabled (48k mode)
           {
@@ -296,7 +296,7 @@ void set_banks()
       }
       break;
 
-      case MM_QUORUM:
+      case mem_model::quorum:
       {
           if (!(comp.p00 & Q_TR_DOS))
               comp.flags |= CF_DOSPORTS;
@@ -324,7 +324,7 @@ void set_banks()
       }
       break;
 
-      case MM_LSY256:
+      case mem_model::lsy256:
       // ROM banks: 0 - 128, 1 - 48, 2 - sys, 3 - trd
       {
 		switch (comp.pLSY256 & (PF_EMUL | PF_BLKROM))
@@ -359,7 +359,7 @@ void set_banks()
       }
       break;
 
-	  case MM_PHOENIX:
+	  case mem_model::phoenix:
          bank = (comp.p7FFD & 0x07) |
 				((comp.p7FFD & 0x80) >> 4) |
 				(comp.p1FFD & 0x50) |
@@ -388,16 +388,16 @@ void set_banks()
    bankw[3] = bankr[3] = bank3;
 
    if (bankr[0] >= ROM_BASE_M ||
-     (conf.mem_model == MM_TSL && !comp.ts.w0_we && !comp.ts.vdos)) bankw[0] = TRASH_M;
+     (conf.memmodel == mem_model::tsl && !comp.ts.w0_we && !comp.ts.vdos)) bankw[0] = TRASH_M;
 
    if (bankr[1] >= ROM_BASE_M) bankw[1] = TRASH_M;
    if (bankr[2] >= ROM_BASE_M) bankw[2] = TRASH_M;
    if (bankr[3] >= ROM_BASE_M) bankw[3] = TRASH_M;
 
    u8 dosflags = CF_LEAVEDOSRAM;
-   if (conf.mem_model == MM_TSL && comp.ts.vdos)
+   if (conf.memmodel == mem_model::tsl && comp.ts.vdos)
        dosflags = 0;
-   if (conf.mem_model == MM_PENTAGON || conf.mem_model == MM_PROFI)
+   if (conf.memmodel == mem_model::pentagon || conf.memmodel == mem_model::profi)
        dosflags = CF_LEAVEDOSADR;
 
    if (comp.flags & CF_TRDOS)
@@ -477,12 +477,12 @@ u8 rmdbg(u32 addr)
 }
 */
 
-void set_mode(ROM_MODE mode)
+void set_mode(rom_mode mode)
 {
-   if (mode == RM_NOCHANGE)
+   if (mode == rom_mode::RM_NOCHANGE)
        return;
 
-   if (mode == RM_CACHE)
+   if (mode == rom_mode::RM_CACHE)
    {
        comp.flags |= CF_CACHEON;
        set_banks();
@@ -498,25 +498,25 @@ void set_mode(ROM_MODE mode)
 
    switch (mode)
    {
-      case RM_128:
+      case rom_mode::RM_128:
          comp.flags &= ~CF_TRDOS;
          comp.p7FFD &= ~0x10;
          break;
-      case RM_SOS:
+      case rom_mode::RM_SOS:
          comp.flags &= ~CF_TRDOS;
          comp.p7FFD |= 0x10;
 
-         if (conf.mem_model == MM_PLUS3) // disable paging
+         if (conf.memmodel == mem_model::plus3) // disable paging
             comp.p7FFD |= 0x20;
          break;
-      case RM_SYS:
+      case rom_mode::RM_SYS:
          comp.flags |= CF_TRDOS;
          comp.p7FFD &= ~0x10;
          break;
-      case RM_DOS:
+      case rom_mode::RM_DOS:
          comp.flags |= CF_TRDOS;
          comp.p7FFD |=  0x10;
-         if (conf.mem_model == MM_ATM710 || conf.mem_model == MM_ATM3)
+         if (conf.memmodel == mem_model::atm710 || conf.memmodel == mem_model::atm3)
              comp.p7FFD &=  ~0x10;
          break;
    }
@@ -585,7 +585,7 @@ void cmos_write(u8 val)
 {
    if (conf.cmos == 2) comp.cmos_addr &= 0x3F;
 
-   if (((conf.mem_model == MM_ATM3) || (conf.mem_model == MM_TSL)) && comp.cmos_addr == 0x0C)
+   if (((conf.memmodel == mem_model::atm3) || (conf.memmodel == mem_model::tsl)) && comp.cmos_addr == 0x0C)
    {
        BYTE keys[256];
        if (GetKeyboardState(keys) && !keys[VK_CAPITAL] != !(val & 0x02))

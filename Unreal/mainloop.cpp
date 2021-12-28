@@ -47,7 +47,7 @@ void spectrum_frame()
    //showleds();
 
    if (!cpu.iff1 || // int disabled in CPU
-        ((conf.mem_model == MM_ATM710/* || conf.mem_model == MM_ATM3*/) && !(comp.pFF77 & 0x20))) // int disabled by ATM hardware -- lvd removed int disabling in pentevo (atm3)
+        ((conf.memmodel == mem_model::atm710/* || conf.memmodel == atm3*/) && !(comp.pFF77 & 0x20))) // int disabled by ATM hardware -- lvd removed int disabling in pentevo (atm3)
    {
       u8 *mp = am_r(cpu.pc);
       if (cpu.halted)
@@ -67,7 +67,7 @@ void spectrum_frame()
    cpu.t -= conf.frame;
    cpu.eipos -= conf.frame;
    comp.frame_counter++;
-   if (conf.mem_model == MM_TSL)
+   if (conf.memmodel == mem_model::tsl)
    {
      comp.ts.intctrl.last_cput -= conf.frame;
    }

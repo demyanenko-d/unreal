@@ -149,7 +149,7 @@ void flush_snd_frame()
   {
       u32 v = sndbuf[bufplay & (SNDBUFSIZE-1)];
       u32 Y;
-      if (conf.RejectDC) // DC rejection filter
+      if (conf.reject_dc) // DC rejection filter
       {
           i16 x[2];
           float y[2];

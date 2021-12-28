@@ -398,7 +398,7 @@ void show_mband(u32 *dst, unsigned start)
 	u8 band[128];
 	for (i = 0; i < 128; i++) {
 		u8 res = 0;
-		for (unsigned q = 0; q < conf.led.bandBpp; q++)
+		for (unsigned q = 0; q < conf.led.band_bpp; q++)
 			res |= cpu.membits[start++];
 		band[i] = res;
 	}
@@ -440,7 +440,7 @@ void memband_led()
    u32 *dst = temp.led.memband;
    for (unsigned start = 0x0000; start < 0x10000;) {
       show_mband(dst, start);
-      start += conf.led.bandBpp * 128;
+      start += conf.led.band_bpp * 128;
       dst += 10*pitch;
    }
 

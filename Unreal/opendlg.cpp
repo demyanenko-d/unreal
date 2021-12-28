@@ -194,14 +194,14 @@ int get_snapshot_file_name(OPENFILENAME *ofn, int save)
 
    ofn->lpfnHook          = PreviewDlgProc;
    ofn->lpTemplateName    = MAKEINTRESOURCE(IDD_FILEPREVIEW);
-   ofn->lpstrInitialDir   = temp.SnapDir;
+   ofn->lpstrInitialDir   = temp.snap_dir;
 
    const BOOL res = save? GetSaveFileName(ofn) : GetOpenFileName(ofn);
 
    if (res)
    {
-       strcpy(temp.SnapDir, ofn->lpstrFile);
-       char *ptr = strrchr(temp.SnapDir, '\\');
+       strcpy(temp.snap_dir, ofn->lpstrFile);
+       char *ptr = strrchr(temp.snap_dir, '\\');
        if (ptr)
         *ptr = 0;
        return res;

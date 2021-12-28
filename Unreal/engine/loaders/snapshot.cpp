@@ -162,37 +162,37 @@ int loadsnap(char *filename)
       return ok;
    }
 
-    int loadStatus = 0;
+    int load_status = 0;
     switch (type) {
-        case snSP: loadStatus = readSP(); break;
-	    case snSNA_48: loadStatus = readSNA48(); break;
-        case snSNA_128: loadStatus = readSNA128(); break;
-        case snSPG: loadStatus = readSPG(); break;
-        case snZ80: loadStatus = readZ80(); break;
-        case snTAP: loadStatus = readTAP(); break;
-        case snTZX: loadStatus = readTZX(); break;
-        case snCSW: loadStatus = readCSW(); break;
+        case snSP: load_status = readSP(); break;
+	    case snSNA_48: load_status = readSNA48(); break;
+        case snSNA_128: load_status = readSNA128(); break;
+        case snSPG: load_status = readSPG(); break;
+        case snZ80: load_status = readZ80(); break;
+        case snTAP: load_status = readTAP(); break;
+        case snTZX: load_status = readTZX(); break;
+        case snCSW: load_status = readCSW(); break;
         default: break;
     }
 
     // reload labels if success (network/VM shared folders fix)
-    if ((loadStatus == 1) && (trace_labels)) mon_labels.import_file();
+    if ((load_status == 1) && (trace_labels)) mon_labels.import_file();
 
-    return loadStatus;
+    return load_status;
 }
 
 int readSPG()
 {
-	hdrSPG1_0 *hdr10 = (hdrSPG1_0*)snbuf;
-	hdrSPG0_2 *hdr02 = (hdrSPG0_2*)snbuf;
+	const auto hdr10 = (hdrSPG1_0*)snbuf;
+	const auto hdr02 = (hdrSPG0_2*)snbuf;
 
 	if (memcmp(&hdr10->sign, "SpectrumProg", 12))
 		return 0;
-	u8 type = hdr10->ver;
+	const u8 type = hdr10->ver;
 	if ((type != 0) && (type != 1) && (type != 2) && (type != 0x10))
 		return 0;
 
-	reset(RM_NOCHANGE);
+	reset(rom_mode::RM_NOCHANGE);
 	load_spec_colors();
 	reset_sound();
 
@@ -203,7 +203,7 @@ int readSPG()
   case 1: // random memory initialization
     for (u32 i = 0; i < PAGE * MAX_RAM_PAGES; i++)
     {
-      srand((unsigned)time(NULL));
+      srand((unsigned)time(nullptr));
       u8 byte = rand();
       RAM_BASE_M[i] = byte;
     }
@@ -329,8 +329,8 @@ int readSPG()
 
 int readSNA128()
 {
-   // conf.mem_model = MM_PENTAGON; conf.ramsize = 128;
-	reset(RM_NOCHANGE);
+   // conf.memmodel = pentagon; conf.ramsize = 128;
+	reset(rom_mode::RM_NOCHANGE);
    hdrSNA128 *hdr = (hdrSNA128*)snbuf;
    // reset(hdr->trdos? RM_DOS : RM_SOS);
    cpu.alt.af = hdr->altaf; cpu.alt.bc = hdr->altbc;
@@ -354,8 +354,8 @@ int readSNA128()
 
 int readSNA48()
 {
-   //conf.mem_model = MM_PENTAGON; conf.ramsize = 128;  // molodcov_alex
-   reset(RM_SOS);
+   //conf.memmodel = pentagon; conf.ramsize = 128;  // molodcov_alex
+   reset(rom_mode::RM_SOS);
    hdrSNA128 *hdr = (hdrSNA128*)snbuf;
    cpu.alt.af = hdr->altaf; cpu.alt.bc = hdr->altbc;
    cpu.alt.de = hdr->altde; cpu.alt.hl = hdr->althl;
@@ -374,8 +374,8 @@ int readSNA48()
 
 int readSP()
 {
-   //conf.mem_model = MM_PENTAGON; conf.ramsize = 128;  // molodcov_alex
-   reset(RM_SOS);
+   //conf.memmodel = pentagon; conf.ramsize = 128;  // molodcov_alex
+   reset(rom_mode::RM_SOS);
    hdrSP *hdr = (hdrSP*)snbuf;
    cpu.alt.af = hdr->altaf; cpu.alt.bc = hdr->altbc;
    cpu.alt.de = hdr->altde; cpu.alt.hl = hdr->althl;
@@ -444,11 +444,11 @@ void unpack_page(u8 *dst, int dstlen, u8 *src, int srclen)
 
 int readZ80()
 {
-   //conf.mem_model = MM_PENTAGON; conf.ramsize = 128;  // molodcov_alex
+   //conf.memmodel = pentagon; conf.ramsize = 128;  // molodcov_alex
    hdrZ80 *hdr = (hdrZ80*)snbuf;
    u8 *ptr = snbuf + 30;
    u8 model48k = (hdr->model < 3);
-   reset((model48k|(hdr->p7FFD & 0x10)) ? RM_SOS : RM_128);
+   reset((model48k|(hdr->p7FFD & 0x10)) ? rom_mode::RM_SOS : rom_mode::RM_128);
    if (hdr->flags == 0xFF)
        hdr->flags = 1;
    if (hdr->pc == 0)
@@ -967,7 +967,7 @@ char* SaveScreenshot(const char* prefix, unsigned counter)
    static char fname[FILENAME_MAX];
    strcpy(fname, conf.scrshot_path);
 
-   sprintf(fname + strlen(fname), "\\%s%06u.%s", prefix, counter, SSHOT_EXT[conf.scrshot]);
+   sprintf(fname + strlen(fname), "\\%s%06u.%s", prefix, counter, sshot_ext[conf.scrshot]);
 
    FILE* fileShot = 0;
    if (conf.scrshot == SS_SCR || conf.scrshot == SS_BMP)

@@ -251,7 +251,7 @@ void mon_labels_t::find_xas()
 {
 	char look_page_6 = 0;
 	const char *err = "XAS labels not found in bank #06";
-	if (conf.mem_model == MM_PENTAGON && conf.ramsize > 128)
+	if (conf.memmodel == mem_model::pentagon && conf.ramsize > 128)
 		err = "XAS labels not found in banks #06,#46", look_page_6 = 1;
 	xaspage = 0;
 	if (look_page_6 && RAM_BASE_M[PAGE * 14 + 0x3FFF] == 5 && RAM_BASE_M[PAGE * 14 + 0x1FFF] == 5) xaspage = 0x46;

@@ -40,7 +40,7 @@ int nmi_pending = 0;
 bool ConfirmExit();
 BOOL WINAPI ConsoleHandler(DWORD CtrlType);
 
-void m_nmi(ROM_MODE page);
+void m_nmi(rom_mode page);
 void showhelp(const char *anchor)
 {
    sound_stop(); //Alone Coder 0.36.6
@@ -78,7 +78,7 @@ static bool Exit = false;
 
 bool ConfirmExit()
 {
-    if (!conf.ConfirmExit)
+    if (!conf.confirm_exit)
         return true;
 
     return MessageBox(wnd, "Exit ?", "Unreal", MB_YESNO | MB_ICONQUESTION | MB_SETFOREGROUND) == IDYES;

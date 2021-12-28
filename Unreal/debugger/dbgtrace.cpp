@@ -529,25 +529,25 @@ void mon_step()
 	cpu.CheckNextFrame();
 
 	// Baseconf NMI trap
-	if (conf.mem_model == MM_ATM3 && (comp.pBF & 0x10) && (cpu.pc == comp.pBD))
+	if (conf.memmodel == mem_model::atm3 && (comp.pBF & 0x10) && (cpu.pc == comp.pBD))
 		nmi_pending = 1;
 
 	// NMI processing
 	if (nmi_pending)
 	{
-		if (conf.mem_model == MM_ATM3)
+		if (conf.memmodel == mem_model::atm3)
 		{
 			nmi_pending = 0;
 			cpu.nmi_in_progress = true;
 			set_banks();
-			m_nmi(RM_NOCHANGE);
+			m_nmi(rom_mode::RM_NOCHANGE);
 		}
-		else if (conf.mem_model == MM_PROFSCORP || conf.mem_model == MM_SCORP)
+		else if (conf.memmodel == mem_model::profscorp || conf.memmodel == mem_model::scorp)
 		{
 			nmi_pending--;
 			if (cpu.pc > 0x4000)
 			{
-				m_nmi(RM_DOS);
+				m_nmi(rom_mode::RM_DOS);
 				nmi_pending = 0;
 			}
 		}
@@ -558,7 +558,7 @@ void mon_step()
 	// Baseconf NMI
 	if (comp.pBE)
 	{
-		if (conf.mem_model == MM_ATM3 && comp.pBE == 1)
+		if (conf.memmodel == mem_model::atm3 && comp.pBE == 1)
 		{
 			cpu.nmi_in_progress = false;
 			set_banks();
@@ -567,7 +567,7 @@ void mon_step()
 	}
 
 	// INT processing
-	if (conf.mem_model == MM_TSL)
+	if (conf.memmodel == mem_model::tsl)
 	{
 		const bool vdos = comp.ts.vdos || comp.ts.vdos_m1;
 

@@ -344,7 +344,7 @@ u8 isbrk(const Z80 &cpu) // is there breakpoints active or any other reason to u
 		return 1;
 #endif
 
-	if (conf.mem_model == MM_PROFSCORP)
+	if (conf.memmodel == mem_model::profscorp)
 		return 1; // breakpoint on read ROM switches ROM bank
 
 #ifdef MOD_MONITOR
@@ -417,7 +417,7 @@ void set_debug_window_size() {
 
     cl_rect.left = 0;
     cl_rect.top = 0;
-    cl_rect.right = (conf.mem_model == MM_TSL ? DEBUG_WND_WIDTH : DEBUG_WND_WIDTH_NOTSCONF) * windowScale - 1;
+    cl_rect.right = (conf.memmodel == mem_model::tsl ? DEBUG_WND_WIDTH : DEBUG_WND_WIDTH_NOTSCONF) * windowScale - 1;
     cl_rect.bottom = DEBUG_WND_HEIGHT * windowScale - 1;
     AdjustWindowRect(&cl_rect, dw_style, GetMenu(debug_wnd) != nullptr);
     SetWindowPos(debug_wnd, nullptr, 0, 0, cl_rect.right - cl_rect.left + 1, cl_rect.bottom - cl_rect.top + 1, SWP_NOMOVE);

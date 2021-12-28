@@ -82,14 +82,14 @@ void reset_sound(void)
    #endif
 }
 
-void reset(ROM_MODE mode)
+void reset(rom_mode mode)
 {
-   comp.pEFF7 &= conf.EFF7_mask;
+   comp.pEFF7 &= conf.eff7_mask;
    comp.pEFF7 |= EFF7_GIGASCREEN; // [vv] disable turbo
    {
         conf.frame = frametime;
         cpu.SetTpi(conf.frame);
-//                if ((conf.mem_model == MM_PENTAGON)&&(comp.pEFF7 & EFF7_GIGASCREEN))conf.frame = 71680; //removed 0.37
+//                if ((conf.memmodel == pentagon)&&(comp.pEFF7 & EFF7_GIGASCREEN))conf.frame = 71680; //removed 0.37
         apply_sound();
    } //Alone Coder 0.36.4
    comp.t_states = 0; comp.frame_counter = 0;
@@ -102,20 +102,21 @@ void reset(ROM_MODE mode)
 
    tsinit();
 
-   if (conf.mem_model == MM_TSL)
+   if (conf.memmodel == mem_model::tsl)
 		set_clk();		// turbo 2x (7MHz) for TS-Conf
    else
 		turbo(1);		// turbo 1x (3.5MHz) for all other clones
         
-   if (conf.mem_model == MM_LSY256)
-        mode = RM_SYS;
+   if (conf.memmodel == mem_model::lsy256)
+        mode = rom_mode::RM_SYS;
    
    switch (mode)
    {
-	case RM_SYS: {comp.ts.memconf = 4; break;}
-	case RM_DOS: {comp.ts.memconf = 0; break;}
-	case RM_128: {comp.ts.memconf = 0; break;}
-	case RM_SOS: {comp.ts.memconf = 0; break;}
+	case rom_mode::RM_SYS: {comp.ts.memconf = 4; break;}
+	case rom_mode::RM_DOS: {comp.ts.memconf = 0; break;}
+	case rom_mode::RM_128: {comp.ts.memconf = 0; break;}
+	case rom_mode::RM_SOS: {comp.ts.memconf = 0; break;}
+   default: ;
    }
 
    comp.p00 = comp.p80FD = 0; 	// quorum
@@ -123,11 +124,11 @@ void reset(ROM_MODE mode)
    comp.pBF = 0; // ATM3
    comp.pBE = 0; // ATM3
 
-   if (conf.mem_model == MM_ATM710 || conf.mem_model == MM_ATM3)
+   if (conf.memmodel == mem_model::atm710 || conf.memmodel == mem_model::atm3)
    {
        switch(mode)
        {
-       case RM_DOS:
+       case rom_mode::RM_DOS:
            // Запрет палитры, запрет cpm, включение диспетчера памяти
            // Включение механической клавиатуры, разрешение кадровых прерываний
            set_atm_FF77(0x4000 | 0x200 | 0x100, 0x80 | 0x40 | 0x20 | 3);
@@ -146,11 +147,11 @@ void reset(ROM_MODE mode)
        }
    }
 
-   if (conf.mem_model == MM_ATM450)
+   if (conf.memmodel == mem_model::atm450)
    {
        switch(mode)
        {
-       case RM_DOS:
+       case rom_mode::RM_DOS:
            set_atm_aFE(0x80|0x60);
            comp.aFB = 0;
        break;
@@ -180,9 +181,9 @@ void reset(ROM_MODE mode)
    input.atm51.reset();
    input.buffer.Enable(false);
 
-   if ((!conf.trdos_present && mode == RM_DOS) ||
-       (!conf.cache && mode == RM_CACHE))
-       mode = RM_SOS;
+   if ((!conf.trdos_present && mode == rom_mode::RM_DOS) ||
+       (!conf.cache && mode == rom_mode::RM_CACHE))
+       mode = rom_mode::RM_SOS;
 
    set_mode(mode);
 }
@@ -195,6 +196,7 @@ void set_clk(void)
 		case 1: turbo(2); break;
 		case 2: turbo(4); break;
 		case 3: turbo(4); break;
+	default: ;
 	}
 	comp.ts.intctrl.frame_len = (conf.intlen * cpu.rate) >> 8;
 }

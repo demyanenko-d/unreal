@@ -221,7 +221,7 @@ static void FlipD3d()
 
 void flip()
 {
-   if (temp.Minimized)
+   if (temp.minimized)
        return;
 
    if (conf.flip && (temp.rflags & (RF_GDI | RF_CLIP)))
@@ -677,9 +677,9 @@ static INT_PTR CALLBACK WndProc(HWND hwnd,UINT uMessage,WPARAM wparam,LPARAM lpa
           if (ConfirmExit())
               correct_exit();
       return 0;
-      case SC_MINIMIZE: temp.Minimized = true; break;
+      case SC_MINIMIZE: temp.minimized = true; break;
 
-      case SC_RESTORE: temp.Minimized = false; break;
+      case SC_RESTORE: temp.minimized = false; break;
       }
    }
 

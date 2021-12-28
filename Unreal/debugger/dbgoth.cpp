@@ -164,9 +164,9 @@ void __cdecl BankNames(int i, char *name)
 		strcpy(name, "TRDOS");
 	if (bankr[i] == base_128_rom)
 		strcpy(name, "B128K");
-	if (bankr[i] == base_sys_rom && (conf.mem_model == MM_PROFSCORP || conf.mem_model == MM_SCORP || conf.mem_model == MM_GMX))
+	if (bankr[i] == base_sys_rom && (conf.memmodel == mem_model::profscorp || conf.memmodel == mem_model::scorp || conf.memmodel == mem_model::gmx))
 		strcpy(name, "SVM  ");
-	if ((conf.mem_model == MM_PROFSCORP || conf.mem_model == MM_SCORP || conf.mem_model == MM_GMX) && is_rom && rom_bank > 3)
+	if ((conf.memmodel == mem_model::profscorp || conf.memmodel == mem_model::scorp || conf.memmodel == mem_model::gmx) && is_rom && rom_bank > 3)
 		sprintf(name, "ROM%2X", rom_bank);
 
 	if (bankr[i] == CACHE_M)
@@ -221,7 +221,7 @@ void benter() {
 }
 
 int dispatch_banks() {
-	if ((conf.mem_model == MM_TSL) && (selbank != UINT_MAX) &&
+	if ((conf.memmodel == mem_model::tsl) && (selbank != UINT_MAX) &&
 		((input.lastkey >= '0' && input.lastkey <= '9') || (input.lastkey >= 'A' && input.lastkey <= 'F')))
 	{
 		benter();
@@ -255,31 +255,31 @@ void showports()
 	tprint(ports_x, ports_y, ln, w_other);
 	sprintf(ln, "7FFD:%02X", comp.p7FFD);
 	tprint(ports_x, ports_y + 1, ln, (comp.p7FFD & 0x20) &&
-		!((conf.mem_model == MM_PENTAGON && conf.ramsize == 1024) ||
-		(conf.mem_model == MM_PROFI && (comp.pDFFD & 0x10))) ? w_48_k : w_other);
+		!((conf.memmodel == mem_model::pentagon && conf.ramsize == 1024) ||
+		(conf.memmodel == mem_model::profi && (comp.pDFFD & 0x10))) ? w_48_k : w_other);
 
-	switch (conf.mem_model)
+	switch (conf.memmodel)
 	{
-	case MM_KAY:
-	case MM_SCORP:
-	case MM_PROFSCORP:
-	case MM_GMX:
-	case MM_PLUS3:
-	case MM_PHOENIX:
+	case mem_model::kay:
+	case mem_model::scorp:
+	case mem_model::profscorp:
+	case mem_model::gmx:
+	case mem_model::plus3:
+	case mem_model::phoenix:
 		dbg_extport = 0x1FFD; dgb_extval = comp.p1FFD;
 		break;
-	case MM_PROFI:
+	case mem_model::profi:
 		dbg_extport = 0xDFFD; dgb_extval = comp.pDFFD;
 		break;
-	case MM_ATM450:
+	case mem_model::atm450:
 		dbg_extport = 0xFDFD; dgb_extval = comp.pFDFD;
 		break;
-	case MM_ATM710:
-	case MM_ATM3:
+	case mem_model::atm710:
+	case mem_model::atm3:
 		dbg_extport = (comp.aFF77 & 0xFFFF);
 		dgb_extval = comp.pFF77;
 		break;
-	case MM_QUORUM:
+	case mem_model::quorum:
 		dbg_extport = 0x0000; dgb_extval = comp.p00;
 		break;
 	default:
