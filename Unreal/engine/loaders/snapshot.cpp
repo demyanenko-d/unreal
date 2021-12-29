@@ -15,7 +15,6 @@
 #include "debugger/dbglabls.h"
 #include <ctime>
 
-using namespace Gdiplus;
 ULONG_PTR gdiplusToken = 0;
 CLSID clsidPngEncoder = GUID_NULL;
 CLSID clsidGifEncoder = GUID_NULL;
@@ -30,21 +29,21 @@ int load_arc(const char *fname);
 
 bool GdiplusStartup()
 {
-	const GdiplusStartupInput gdiplus_startup_input;
-    if (GdiplusStartup(&gdiplusToken, &gdiplus_startup_input, nullptr) == Ok)
+	const Gdiplus::GdiplusStartupInput gdiplus_startup_input;
+    if (GdiplusStartup(&gdiplusToken, &gdiplus_startup_input, nullptr) == Gdiplus::Ok)
     {
         UINT num, size;
-        GetImageEncodersSize(&num, &size);
+        Gdiplus::GetImageEncodersSize(&num, &size);
         if (num)
         {
-	        const auto info = (ImageCodecInfo*)(malloc(size));
-            if (GetImageEncoders(num, size, info) == Ok)
+	        const auto info = (Gdiplus::ImageCodecInfo*)(malloc(size));
+            if (GetImageEncoders(num, size, info) == Gdiplus::Ok)
             {
                 for (UINT i = 0; i < num; i++)
                 {
-                    if (info[i].FormatID == ImageFormatPNG)
+                    if (info[i].FormatID == Gdiplus::ImageFormatPNG)
                         clsidPngEncoder = info[i].Clsid;
-                    else if (info[i].FormatID == ImageFormatGIF)
+                    else if (info[i].FormatID == Gdiplus::ImageFormatGIF)
                         clsidGifEncoder = info[i].Clsid;
                 }
                 free(info);
@@ -59,7 +58,7 @@ bool GdiplusStartup()
 void gdiplus_shutdown()
 {
     clsidPngEncoder = clsidGifEncoder = GUID_NULL;
-    if (gdiplusToken) GdiplusShutdown(gdiplusToken);
+    if (gdiplusToken) Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 u8 what_is(const char *filename)
@@ -1022,7 +1021,7 @@ char* SaveScreenshot(const char* prefix, unsigned counter)
       else
       {
          //static png_color bkgColor = {127, 127, 127};
-         Bitmap bmp(temp.ox, temp.oy, (temp.ox * 3 + 3) & ~3, PixelFormat24bppRGB, ds);
+         Gdiplus::Bitmap bmp(temp.ox, temp.oy, (temp.ox * 3 + 3) & ~3, PixelFormat24bppRGB, ds);
 
          size_t fname_len = strlen(fname);
          wchar_t* fnameW = new wchar_t[fname_len + 1];

@@ -11,6 +11,7 @@
 #include "memory.h"
 
 #include <Poco/Util/Application.h>
+#include <Poco/Path.h>
 
 #include "config.h"
 #include "emulkeys.h"
@@ -111,6 +112,8 @@ BOOL WINAPI ConsoleHandler(const DWORD ctrl_type)
 
 class App: public Application
 {
+private:
+    bool config_loaded_ = false;
 
 protected:
     
@@ -134,7 +137,28 @@ protected:
         printf("UnrealSpeccy by SMT and Others\nBuild date: %s, %s\n\n", __DATE__, __TIME__);
         color();
 
+        load_errors = 0;
+        trd_toload = 0;
+        *(DWORD*)trd_loaded = 0; // clear loaded flags, don't see autoload'ed images
 
+        for (auto it = argv().begin(); it != argv().end(); ++it)
+        {
+            trd_toload = DefaultDrive; // auto-select
+            if (!loadsnap(it->c_str())) {
+                logger().error("error loading :" + *it);
+                load_errors = 1;
+            }
+        }
+
+        if (load_errors) {
+            const int code = MessageBox(wnd, "Some files, specified in\r\ncommand line, failed to load\r\n\r\nContinue emulation?", "File loading error", MB_YESNO | MB_ICONWARNING);
+            if (code != IDYES) exit();
+        }
+
+        InitializeCriticalSection(&tsu_toggle_cr);
+
+
+        /*
 
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
         rand_ram();
@@ -145,28 +169,25 @@ protected:
 
         SetForegroundWindow(wnd);
         mainloop(Exit);
-
+        */
         return Application::EXIT_OK;
 	}
 
 	void initialize(Application& self) override
 	{
-        loadConfiguration(); // load default configuration files, if present
+        if (!config_loaded_) loadConfiguration();
         Application::initialize(self);
 
         //+++++++++++++++++++++++++++++++++++++++++++cpu_info();
 
-        
+        load_config(Poco::Path(this->commandPath()).makeParent(), config());
 
         temp.minimized = false;
 
         init_z80tables();
         init_ie_help();
-        //+++++++++++++++++++++++++++++++++++++++++++load_config(config);
-        //make_samples();
 
-
-		/*init_gs();
+		init_gs();
         init_leds();
         init_tape();
         init_hdd_cd();
@@ -199,26 +220,6 @@ protected:
                 comp.ts.vdac2 = false;
             }
         }
-        */
-        load_errors = 0;
-        trd_toload = 0;
-        *(DWORD*)trd_loaded = 0; // clear loaded flags, don't see autoload'ed images
-
-        for (auto it = argv().begin(); it != argv().end(); ++it)
-        {
-            trd_toload = DefaultDrive; // auto-select
-            if (!loadsnap(it->c_str())) {
-                logger().error("error loading :" + *it);
-                load_errors = 1;
-            }
-        }
-
-        if (load_errors) {
-	        const int code = MessageBox(wnd, "Some files, specified in\r\ncommand line, failed to load\r\n\r\nContinue emulation?", "File loading error", MB_YESNO | MB_ICONWARNING);
-            if (code != IDYES) exit();
-        }
-
-        InitializeCriticalSection(&tsu_toggle_cr);
 	}
 
 	void defineOptions(Poco::Util::OptionSet& options) override
@@ -249,7 +250,9 @@ protected:
 
     void handle_config(const std::string& name, const std::string& value)
     {
-        loadConfiguration(value);
+	    const auto path = Poco::Path(this->commandPath()).makeParent().append(value);
+        loadConfiguration(path.toString());
+        config_loaded_ = true;
     }
 
     void handle_bpx(const std::string& name, const std::string& value)
@@ -261,6 +264,7 @@ protected:
     {
         init_labels(value.c_str());
     }
+
 };
 
 POCO_APP_MAIN(App)

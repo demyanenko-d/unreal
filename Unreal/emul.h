@@ -1,6 +1,9 @@
 #pragma once
 
 #include "sysdefs.h"
+#include <string>
+#include <vector>
+
 #include "engine/audio/sndrender.h"
 #include "hardware/clones/tsconf.h"
 #include "engine/video/savevid.h"
@@ -189,9 +192,9 @@ struct CONFIG
 
 	u8 lockmouse;
 	u8 detect_video;
-	u8 tape_traps;
+	bool tape_traps;
 	u8 ulaplus;
-	u8 tape_autostart;
+	bool tape_autostart;
 	SSHOT_FORMAT scrshot;
 	char scrshot_path[FILENAME_MAX];
 
@@ -226,11 +229,10 @@ struct CONFIG
 
 	u8 gs_type;
 	u8 pixelscroll;
-	u8 sleepidle;
+	bool sleepidle;
 	u8 rsrvd1_;
-	u8 confirm_exit;
-
-	u8 highpriority;
+	bool confirm_exit;
+	bool highpriority;
 	u8 videoscale;
 
 	mem_model memmodel;
@@ -330,11 +332,7 @@ struct CONFIG
 #endif
 
 	char moonsound_rom_path[FILENAME_MAX];
-
-#ifdef MOD_MONITOR
-	char sos_labels_path[FILENAME_MAX];
-#endif
-
+	std::vector<std::string> sos_labels_path{};
 	char ngs_sd_card_path[FILENAME_MAX];
 
 	u8 zc;

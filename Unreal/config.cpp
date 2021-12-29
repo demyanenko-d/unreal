@@ -15,7 +15,11 @@
 #include "engine/utils/util.h"
 #include "config.h"
 
+#include <Poco/Path.h>
+
 #include "hardware/sound/dev_moonsound.h"
+#include "Poco/RegularExpression.h"
+#include "Poco/NumberParser.h"
 
 char load_errors;
 const char* sshot_ext[] = { "scr", "bmp", "png", "gif" };
@@ -225,26 +229,12 @@ void load_ay_vols()
 	}
 }
 
-void load_config(const char* fname)
+
+
+void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfiguration& config)
 {
-	char line[FILENAME_MAX];
-	load_errors = 0;
-	u32 i;
 
-	GetModuleFileName(nullptr, ininame, sizeof ininame);
-	strlwr(ininame); *(unsigned*)(strstr(ininame, ".exe") + 1) = WORD4('i', 'n', 'i', 0);
-
-	if (fname && *fname) {
-		char* dst = strrchr(ininame, '\\');
-		if (strchr(fname, '/') || strchr(fname, '\\')) dst = ininame; else dst++;
-		strcpy(dst, fname);
-	}
-	color(CONSCLR_DEFAULT); printf("ini: ");
-	color(CONSCLR_INFO);    printf("%s\n", ininame);
-
-	if (GetFileAttributes(ininame) == -1) errexit("config file not found");
-
-	static const char* misc = "MISC";
+	//static const char* misc = "MISC";
 	static const char* video = "VIDEO";
 	static const char* ula = "ULA";
 	static const char* beta128 = "Beta128";
@@ -260,28 +250,75 @@ void load_config(const char* fname)
 	static const char* ngs = "NGS";
 	static const char* zc = "ZC";
 
-#ifdef MOD_MONITOR
-	addpath(conf.sos_labels_path, "sos.l");
-#endif
+	char line[200];
+	int i;
 
-	GetPrivateProfileString(misc, "Help", "help_eng.html", helpname, sizeof helpname, ininame);
-	addpath(helpname);
+	const Poco::RegularExpression rex("[^\\s]*");
 
-	if (GetPrivateProfileInt(misc, "HideConsole", 0, ininame))
+	auto get_string_value = [&](const std::string& key, const std::string& def_value)
+	{
+		if (config.hasProperty(key))
+		{
+			std::string res;
+			const auto val = config.getString(key);
+			if (const auto cnt = rex.extract(val, 0, res); cnt == 0)
+				return def_value;
+
+			return res;
+		}
+
+		return def_value;
+	};
+
+	auto get_int_value = [&](const std::string& key, const int def_value)
+	{
+		if (config.hasProperty(key))
+		{
+			const auto res = get_string_value(key, "");
+			if (res.empty()) return def_value;
+
+			return Poco::NumberParser::parse(res);
+		}
+
+		return def_value;
+	};
+
+	auto get_path_value = [&](const std::string& key, const std::string& def_value) -> std::string
+	{
+		std::string res;
+
+		if (config.hasProperty(key))
+		{
+			const auto val = config.getString(key);
+			const auto cnt = rex.extract(val, 0, res);
+			if (cnt == 0) 
+				res = def_value;
+		} else
+			res = def_value;
+
+		return root_path.append(res).toString();
+	};
+
+	
+
+	conf.sos_labels_path.emplace_back("sos.l");
+	helpname = get_string_value("misc.help", "help_eng.html");
+
+	if (get_int_value("misc.HideConsole", 0) != 0)
 	{
 		FreeConsole();
 		nowait = 1;
 	}
 
-	conf.confirm_exit = GetPrivateProfileInt(misc, "ConfirmExit", 0, ininame);
+	conf.confirm_exit = get_int_value("misc.ConfirmExit", 0) != 0;
+	conf.sleepidle = get_int_value("misc.ShareCPU", 0) != 0;
+	conf.highpriority = get_int_value("misc.HighPriority", 0) != 0;
 
-	conf.sleepidle = GetPrivateProfileInt(misc, "ShareCPU", 0, ininame);
-	conf.highpriority = GetPrivateProfileInt(misc, "HighPriority", 0, ininame);
-	conf.tape_traps = GetPrivateProfileInt(misc, "TapeTraps", 1, ininame);
-	cpu.vm1 = GetPrivateProfileInt(misc, "Z80_VM1", 0, ininame) != 0;
-	cpu.outc0 = GetPrivateProfileInt(misc, "OUT_C_0", 1, ininame);
-	conf.tape_autostart = GetPrivateProfileInt(misc, "TapeAutoStart", 1, ininame);
-	conf.eff7_mask = GetPrivateProfileInt(misc, "EFF7mask", 0, ininame);
+	conf.tape_traps = get_int_value("misc.TapeTraps", 1) != 0;
+	cpu.vm1 = get_int_value("misc.Z80_VM1", 0) != 0;
+	cpu.outc0 = u8(get_int_value("misc.OUT_C_0", 0));
+	conf.tape_autostart = get_int_value("misc.TapeAutoStart", 1) != 0;
+	conf.eff7_mask = u8(get_int_value("misc.EFF7mask", 0));
 	conf.spg_mem_init = GetPrivateProfileInt(misc, "SPGMemInit", 0, ininame);
 
 	GetPrivateProfileString(rom, "PENTAGON", nil, conf.pent_rom_path, sizeof conf.pent_rom_path, ininame);
@@ -681,17 +718,17 @@ void load_config(const char* fname)
 			&pals[i].r21, &pals[i].r22, &pals[i].r23,
 			&pals[i].r31, &pals[i].r32, &pals[i].r33);
 
-		pals[i].r11 = min(pals[i].r11, 256U);
-		pals[i].r12 = min(pals[i].r12, 256U);
-		pals[i].r13 = min(pals[i].r13, 256U);
+		pals[i].r11 = std::min(pals[i].r11, 256U);
+		pals[i].r12 = std::min(pals[i].r12, 256U);
+		pals[i].r13 = std::min(pals[i].r13, 256U);
 
-		pals[i].r21 = min(pals[i].r21, 256U);
-		pals[i].r22 = min(pals[i].r22, 256U);
-		pals[i].r23 = min(pals[i].r23, 256U);
+		pals[i].r21 = std::min(pals[i].r21, 256U);
+		pals[i].r22 = std::min(pals[i].r22, 256U);
+		pals[i].r23 = std::min(pals[i].r23, 256U);
 
-		pals[i].r31 = min(pals[i].r31, 256U);
-		pals[i].r32 = min(pals[i].r32, 256U);
-		pals[i].r33 = min(pals[i].r33, 256U);
+		pals[i].r31 = std::min(pals[i].r31, 256U);
+		pals[i].r32 = std::min(pals[i].r32, 256U);
+		pals[i].r33 = std::min(pals[i].r33, 256U);
 
 		if (!strnicmp(line, pals[i].name, strlen(pals[i].name)))
 			conf.pal = i;
@@ -1026,9 +1063,7 @@ void apply_memory()
 		set_scorp_profrom(0);
 	}
 
-#ifdef MOD_MONITOR
 	load_labels(conf.sos_labels_path, base_sos_rom, 0x4000);
-#endif
 
 	temp.gs_ram_mask = (conf.gs_ramsize - 1) >> 4;
 	temp.ram_mask = (conf.ramsize - 1) >> 4;

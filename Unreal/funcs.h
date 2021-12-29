@@ -1,4 +1,6 @@
 #include "defs.h"
+#include <string>
+#include <vector>
 
 void __declspec(noreturn) exit();
 void correct_exit();
@@ -36,7 +38,7 @@ void apply_video();
 void apply_gs();
 void setup_dlg();
 void savesnddialog();
-void load_labels(char *filename, u8 *base, unsigned size);
+void load_labels(const std::vector<std::string> &filename, u8 *base, unsigned size);
 u8 isbrk();
 
 void prepare_chunks();

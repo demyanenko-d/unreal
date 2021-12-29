@@ -24,7 +24,7 @@ struct mon_labels_t final
 
    char *find(const u8 *address) const;
    void add(u8 *address, char *name);
-   unsigned load(char *filename, u8 *base, unsigned size);
+   unsigned load(const char *filename, u8 *base, unsigned size);
 
 
    char xas_errstr[80]{};
@@ -55,7 +55,7 @@ struct mon_labels_t final
 
 extern mon_labels_t mon_labels;
 
-void load_labels(char *filename, u8 *base, unsigned size);
+void load_labels(const std::vector<std::string>& filename, u8* base, unsigned size);
 void mon_show_labels();
 void init_labels(const char* filename);
 

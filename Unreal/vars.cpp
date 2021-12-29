@@ -287,7 +287,8 @@ unsigned DefaultDrive = -1; // Дисковод по умолчанию в ко�
 
 char trd_loaded[4]; // used to get first free drive with no account of autoloaded images
 char ininame[0x200];
-char helpname[0x200];
+
+std::string helpname{};
 unsigned snapsize;
 
 // conditional breakpoints support

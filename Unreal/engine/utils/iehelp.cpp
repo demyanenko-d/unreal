@@ -32,7 +32,7 @@ void showhelppp(const char *anchor = 0) //Alone Coder 0.36.6
    char dst[0x200];
    GetTempPath(sizeof dst, dst); strcat(dst, "us_help.htm");
 
-   FILE *ff = fopen(helpname, "rb"), *gg = fopen(dst, "wb");
+   FILE *ff = fopen(helpname.c_str(), "rb"), *gg = fopen(dst, "wb");
    if (!ff || !gg) return;
 
    for (;;)

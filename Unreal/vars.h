@@ -117,7 +117,7 @@ extern u8 cmos[0x100];
 extern u8 nvram[0x800];
 
 extern char ininame[0x200];
-extern char helpname[0x200];
+extern std::string helpname;
 
 extern unsigned num_ula;
 extern char *ulapreset[64];

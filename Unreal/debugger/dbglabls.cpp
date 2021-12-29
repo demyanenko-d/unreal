@@ -112,7 +112,7 @@ char *mon_labels_t::find(const u8 *address) const
 	}
 }
 
-unsigned mon_labels_t::load(char *filename, u8 *base, unsigned size)
+unsigned mon_labels_t::load(const char *filename, u8 *base, unsigned size)
 {
 	const auto in = fopen(filename, "rt");
 	if (!in)
@@ -345,9 +345,12 @@ void mon_labels_t::import_file()
 	//MessageBox(GetForegroundWindow(), tmp, "unreal discovered changes in user labels", MB_OK | MB_ICONINFORMATION);//removed by Alone Coder
 }
 
-void load_labels(char *filename, u8 *base, unsigned size)
+void load_labels(const std::vector<std::string>& filename, u8* base, unsigned size)
 {
-	mon_labels.load(filename, base, size);
+	for (auto& name : filename)
+	{
+		mon_labels.load(name.c_str(), base, size);
+	}
 }
 
 char curlabel[64]; unsigned lcount;
