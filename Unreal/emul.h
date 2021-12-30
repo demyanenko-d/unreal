@@ -201,7 +201,7 @@ struct CONFIG
 	u8 ch_size;
 	u8 eff7_mask;
 	rom_mode reset_rom;
-	u8 use_romset;
+	bool use_romset;
 	u8 spg_mem_init;
 
 	u8 updateb, bordersize;
@@ -224,7 +224,7 @@ struct CONFIG
 
 	u8 cache;
 	u8 cmos;
-	u8 smuc;
+	bool smuc;
 	u8 ula_preset;
 
 	u8 gs_type;
@@ -307,42 +307,40 @@ struct CONFIG
 		rsm_mode mode; // RSM_MODE
 	} rsm;
 
-	char sos_rom_path[FILENAME_MAX];
-	char dos_rom_path[FILENAME_MAX];
-	char zx128_rom_path[FILENAME_MAX];
-	char sys_rom_path[FILENAME_MAX];
-	char pent_rom_path[FILENAME_MAX];
-	char atm1_rom_path[FILENAME_MAX];
-	char atm2_rom_path[FILENAME_MAX];
-	char atm3_rom_path[FILENAME_MAX];
-	char scorp_rom_path[FILENAME_MAX];
-	char prof_rom_path[FILENAME_MAX];
-	char gmx_rom_path[FILENAME_MAX];
-	char profi_rom_path[FILENAME_MAX];
-	char kay_rom_path[FILENAME_MAX];
-	char plus3_rom_path[FILENAME_MAX];
-	char quorum_rom_path[FILENAME_MAX];
-	char tsl_rom_path[FILENAME_MAX];
-	char lsy_rom_path[FILENAME_MAX];
-	char phoenix_rom_path[FILENAME_MAX];
+	std::string sos_rom_path{};
+	std::string dos_rom_path{};
+	std::string zx128_rom_path{};
+	std::string sys_rom_path{};
+	std::string pent_rom_path{};
+	std::string atm1_rom_path{};
+	std::string atm2_rom_path{};
+	std::string atm3_rom_path{};
+	std::string scorp_rom_path{};
+	std::string prof_rom_path{};
+	std::string gmx_rom_path{};
+	std::string profi_rom_path{};
+	std::string kay_rom_path{};
+	std::string plus3_rom_path{};
+	std::string quorum_rom_path{};
+	std::string tsl_rom_path{};
+	std::string lsy_rom_path{};
+	std::string phoenix_rom_path{};
 
-#ifdef MOD_GSZ80
 	unsigned gs_ramsize;
-	char gs_rom_path[FILENAME_MAX];
-#endif
+	std::string gs_rom_path{};
 
-	char moonsound_rom_path[FILENAME_MAX];
+	std::string moonsound_rom_path{};
 	std::vector<std::string> sos_labels_path{};
-	char ngs_sd_card_path[FILENAME_MAX];
+	std::string ngs_sd_card_path{};
 
-	u8 zc;
-	char zc_sd_card_path[FILENAME_MAX];
+	bool zc;
+	std::string zc_sd_card_path{};
 
 	char atariset[64]; // preset for atari mode
 	char zxkeymap[64]; // name of ZX keys map
 	char keyset[64]; // short name of keyboard layout
 	char appendboot[FILENAME_MAX];
-	char workdir[FILENAME_MAX];
+	std::string workdir{};
 	u8 profi_monochrome;
 
 	struct {
@@ -413,9 +411,9 @@ struct TEMP
 	u8 offset_hscroll;
 	u8 offset_hscroll_prev;
 
-	char rom_dir[FILENAME_MAX];
-	char snap_dir[FILENAME_MAX];
-	char hdd_dir[FILENAME_MAX];
+	std::string rom_dir{};
+	std::string snap_dir{};
+	std::string hdd_dir{};
 };
 
 extern TEMP temp;

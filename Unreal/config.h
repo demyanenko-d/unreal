@@ -11,7 +11,6 @@ void addpath(char *dst, const char *fname = nullptr);
 void load_ula_preset();
 void save_ram();
 void save_nv();
-void load_romset(CONFIG *conf, const char *romset);
 void applyconfig();
 void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfiguration &config);
 void autoload();

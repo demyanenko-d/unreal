@@ -11,6 +11,11 @@
 #include "engine/utils/util.h"
 #include "hardware/clones/tsconf.h"
 
+#include "Poco/String.h"
+#include "Poco/Path.h"
+
+using Poco::toLower;
+
 void setcheck(unsigned ID, u8 state = 1)
 {
    CheckDlgButton(dlg, ID, state ? BST_CHECKED : BST_UNCHECKED);
@@ -33,11 +38,13 @@ char rset_list[0x800];
 
 char compare_rset(char *rname)
 {
-   CONFIG c2; load_romset(&c2, rname);
-   if (stricmp(c2.sos_rom_path, c1.sos_rom_path)) return 0;
-   if (stricmp(c2.dos_rom_path, c1.dos_rom_path)) return 0;
-   if (stricmp(c2.sys_rom_path, c1.sys_rom_path)) return 0;
-   if (stricmp(c2.zx128_rom_path, c1.zx128_rom_path)) return 0;
+   CONFIG c2;
+   load_romset(&c2, rname);
+
+   if (toLower(c2.sos_rom_path) != toLower(c1.sos_rom_path)) return 0;
+   if (toLower(c2.dos_rom_path) != toLower(c1.dos_rom_path)) return 0;
+   if (toLower(c2.sys_rom_path) != toLower(c1.sys_rom_path)) return 0;
+   if (toLower(c2.zx128_rom_path) != toLower(c1.zx128_rom_path)) return 0;
    return 1;
 }
 
@@ -49,36 +56,27 @@ void find_romset()
    SendMessage(box, CB_SETCURSEL, cur, 0);
 }
 
-char select_romfile(char *dstname)
+char select_romfile(std::string& dstname)
 {
-   char fname[FILENAME_MAX];
-   fname[0] = 0;
-/*
-   strcpy(fname, dstname);
-   char *x = strrchr(fname+2, ':');
-   if (x)
-       *x = 0;
-*/
+    std::string fname{};
+
    OPENFILENAME ofn = { 0 };
    ofn.lStructSize = (WinVerMajor < 5) ? OPENFILENAME_SIZE_VERSION_400 : sizeof(OPENFILENAME);
    ofn.hwndOwner = dlg;
    ofn.lpstrFilter = "ROM image (*.ROM)\0*.ROM\0All files\0*.*\0";
-   ofn.lpstrFile = fname;
+   ofn.lpstrFile = fname.c_str();
    ofn.nMaxFile = _countof(fname);
    ofn.lpstrTitle = "Select ROM";
    ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR | OFN_HIDEREADONLY;
-   ofn.lpstrInitialDir   = temp.rom_dir;
+   ofn.lpstrInitialDir   = temp.rom_dir.c_str();
    if (!GetOpenFileName(&ofn))
        return 0;
    strcpy(dstname, fname);
-   strcpy(temp.rom_dir, ofn.lpstrFile);
-   char *Ptr = strrchr(temp.rom_dir, '\\');
-   if (Ptr)
-    *Ptr = 0;
+   temp.rom_dir = std::string(ofn.lpstrFile);
    return 1;
 }
 
-char *MemDlg_get_bigrom()
+std::string mem_dlg_get_bigrom()
 {
    if (c1.memmodel == mem_model::pentagon) return c1.pent_rom_path;
    if (c1.memmodel == mem_model::tsl) return c1.tsl_rom_path;
@@ -101,8 +99,9 @@ char *MemDlg_get_bigrom()
 void change_rompage(int dx, int reload)
 {
    int x = SendDlgItemMessage(dlg, IDC_ROMPAGE, CB_GETCURSEL, 0, 0);
-   static char *pgs[] = { c1.sos_rom_path, c1.zx128_rom_path, c1.dos_rom_path, c1.sys_rom_path };
-   char *ptr = pgs[x];
+   const std::string pgs[] = { c1.sos_rom_path, c1.zx128_rom_path, c1.dos_rom_path, c1.sys_rom_path };
+   auto ptr = pgs[x];
+
    if (reload)
        select_romfile(ptr);
    if (dx) {
@@ -124,7 +123,7 @@ void change_rompage(int dx, int reload)
 
 void change_rombank(int dx, int reload)
 {
-   char *romname = MemDlg_get_bigrom();
+   char *romname = mem_dlg_get_bigrom();
 
    char line[512];
 
@@ -249,7 +248,7 @@ void mem_set_sizes()
       if (best == 4096)setcheck(IDC_RAM4096);
    }
 
-   char *romname = MemDlg_get_bigrom();
+   char *romname = mem_dlg_get_bigrom();
    EnableWindow(GetDlgItem(dlg, IDC_SINGLE_ROM), romname? 1 : 0);
    if (romname) SetDlgItemText(dlg, IDE_BIGROM, romname);
    else c1.use_romset = 1, setcheck(IDC_CUSTOM_ROM,1), setcheck(IDC_SINGLE_ROM,0);

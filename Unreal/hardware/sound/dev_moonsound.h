@@ -12,7 +12,7 @@ class ZXMMoonSound : public SNDRENDER
 public:
 	ZXMMoonSound();
 
-	int load_rom(char *path);
+	int load_rom(const char *path);
 
 	void reset();
 	bool write( u8 port, u8 val );

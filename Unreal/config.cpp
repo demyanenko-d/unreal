@@ -20,6 +20,8 @@
 #include "hardware/sound/dev_moonsound.h"
 #include "Poco/RegularExpression.h"
 #include "Poco/NumberParser.h"
+#include "Poco/String.h"
+#include "Poco/StringTokenizer.h"
 
 char load_errors;
 const char* sshot_ext[] = { "scr", "bmp", "png", "gif" };
@@ -28,37 +30,6 @@ void loadkeys(action*);
 void loadzxkeys(CONFIG*);
 void load_arch(const char*);
 
-unsigned load_rom(const char* path, u8* bank, const unsigned max_banks = 1)
-{
-	if (!*path) { norom: memset(bank, 0xFF, max_banks * PAGE); return 0; }
-	char tmp[FILENAME_MAX]; strcpy(tmp, path);
-	char* x = strrchr(tmp + 2, ':');
-	unsigned page = 0;
-	if (x) { *x = 0; page = atoi(x + 1); }
-	if (max_banks == 16) page *= 16; // bank for scorp prof.rom
-
-	FILE* ff = fopen(tmp, "rb");
-
-	if (!ff) {
-		errmsg("ROM file %s not found", tmp);
-	err:
-		load_errors = 1;
-		goto norom;
-	}
-
-	if (fseek(ff, page * PAGE, SEEK_SET)) {
-	badrom:
-		fclose(ff);
-		errmsg("Incorrect ROM file: %s", path);
-		goto err;
-	}
-
-	unsigned size = fread(bank, 1, max_banks * PAGE, ff);
-	if (!size || (size & (PAGE - 1))) goto badrom;
-
-	fclose(ff);
-	return size / 1024;
-}
 
 void load_atm_font()
 {
@@ -141,20 +112,6 @@ void save_nv()
 	if (f0 = fopen(line, "wb")) fwrite(nvram, 1, sizeof nvram, f0), fclose(f0);
 }
 
-void load_romset(CONFIG* conf, const char* romset)
-{
-	char sec[0x200];
-	sprintf(sec, "ROM.%s", romset);
-	GetPrivateProfileString(sec, "sos", nil, conf->sos_rom_path, sizeof conf->sos_rom_path, ininame);
-	GetPrivateProfileString(sec, "dos", nil, conf->dos_rom_path, sizeof conf->dos_rom_path, ininame);
-	GetPrivateProfileString(sec, "128", nil, conf->zx128_rom_path, sizeof conf->zx128_rom_path, ininame);
-	GetPrivateProfileString(sec, "sys", nil, conf->sys_rom_path, sizeof conf->sys_rom_path, ininame);
-	addpath(conf->sos_rom_path);
-	addpath(conf->dos_rom_path);
-	addpath(conf->zx128_rom_path);
-	addpath(conf->sys_rom_path);
-}
-
 void add_presets(const char* section, const char* prefix0, unsigned* num, char** tab, u8* curr)
 {
 	*num = 0;
@@ -229,6 +186,48 @@ void load_ay_vols()
 	}
 }
 
+auto load_rom(const std::string& path, u8* bank, const unsigned max_banks = 1) -> unsigned
+{
+	if (path.empty())
+	{
+	norom: memset(bank, 0xFF, max_banks * PAGE);
+		return 0;
+	}
+
+	auto tmp = path;
+	unsigned page = 0;
+
+	const Poco::StringTokenizer parts(path, ":", Poco::StringTokenizer::TOK_IGNORE_EMPTY | Poco::StringTokenizer::TOK_TRIM);
+	if (parts.count() == 2)
+	{
+		tmp = parts[0];
+		page = Poco::NumberParser::parse(parts[1]);
+	}
+
+	if (max_banks == 16) page *= 16; // bank for scorp prof.rom
+
+	FILE* ff = fopen(tmp.c_str(), "rb");
+
+	if (!ff) {
+		errmsg("ROM file %s not found", tmp.c_str());
+	err:
+		load_errors = 1;
+		goto norom;
+	}
+
+	if (fseek(ff, page * PAGE, SEEK_SET)) {
+	badrom:
+		fclose(ff);
+		errmsg("Incorrect ROM file: %s", path.c_str());
+		goto err;
+	}
+
+	unsigned size = fread(bank, 1, max_banks * PAGE, ff);
+	if (!size || (size & (PAGE - 1))) goto badrom;
+
+	fclose(ff);
+	return size / 1024;
+};
 
 
 void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfiguration& config)
@@ -246,7 +245,7 @@ void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfigura
 	static const char* saa1099 = "SAA1099";
 	static const char* atm = "ATM";
 	static const char* hdd = "HDD";
-	static const char* rom = "ROM";
+	//static const char* rom = "ROM";
 	static const char* ngs = "NGS";
 	static const char* zc = "ZC";
 
@@ -254,6 +253,7 @@ void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfigura
 	int i;
 
 	const Poco::RegularExpression rex("[^\\s]*");
+	const Poco::RegularExpression rnum("[0-9]+");
 
 	auto get_string_value = [&](const std::string& key, const std::string& def_value)
 	{
@@ -290,19 +290,29 @@ void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfigura
 		if (config.hasProperty(key))
 		{
 			const auto val = config.getString(key);
-			const auto cnt = rex.extract(val, 0, res);
-			if (cnt == 0) 
+			if (const auto cnt = rex.extract(val, 0, res); cnt == 0)
 				res = def_value;
-		} else
+		}
+		else
 			res = def_value;
 
-		return root_path.append(res).toString();
+		return Poco::Path(root_path).append(res).toString();
+	};
+
+	auto load_romset = [&](const std::string& romset)
+	{
+		const auto set = "ROM." + romset;
+
+		conf.sos_rom_path   = get_path_value(set + ".sos", "");
+		conf.dos_rom_path   = get_path_value(set + ".dos", "");
+		conf.zx128_rom_path = get_path_value(set + ".128", "");
+		conf.sys_rom_path   = get_path_value(set + ".sys", "");
 	};
 
 	
 
 	conf.sos_labels_path.emplace_back("sos.l");
-	helpname = get_string_value("misc.help", "help_eng.html");
+	helpname = get_path_value("misc.help", "help_eng.html");
 
 	if (get_int_value("misc.HideConsole", 0) != 0)
 	{
@@ -319,117 +329,99 @@ void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfigura
 	cpu.outc0 = u8(get_int_value("misc.OUT_C_0", 0));
 	conf.tape_autostart = get_int_value("misc.TapeAutoStart", 1) != 0;
 	conf.eff7_mask = u8(get_int_value("misc.EFF7mask", 0));
-	conf.spg_mem_init = GetPrivateProfileInt(misc, "SPGMemInit", 0, ininame);
+	conf.spg_mem_init = u8(get_int_value("misc.SPGMemInit", 0));
 
-	GetPrivateProfileString(rom, "PENTAGON", nil, conf.pent_rom_path, sizeof conf.pent_rom_path, ininame);
-	GetPrivateProfileString(rom, "ATM1", nil, conf.atm1_rom_path, sizeof conf.atm1_rom_path, ininame);
-	GetPrivateProfileString(rom, "ATM2", nil, conf.atm2_rom_path, sizeof conf.atm2_rom_path, ininame);
-	GetPrivateProfileString(rom, "ATM3", nil, conf.atm3_rom_path, sizeof conf.atm3_rom_path, ininame);
-	GetPrivateProfileString(rom, "SCORP", nil, conf.scorp_rom_path, sizeof conf.scorp_rom_path, ininame);
-	GetPrivateProfileString(rom, "PROFROM", nil, conf.prof_rom_path, sizeof conf.prof_rom_path, ininame);
-	GetPrivateProfileString(rom, "GMX", nil, conf.gmx_rom_path, sizeof conf.gmx_rom_path, ininame);
-	GetPrivateProfileString(rom, "PROFI", nil, conf.profi_rom_path, sizeof conf.profi_rom_path, ininame);
-	GetPrivateProfileString(rom, "KAY", nil, conf.kay_rom_path, sizeof conf.kay_rom_path, ininame);
-	GetPrivateProfileString(rom, "PLUS3", nil, conf.plus3_rom_path, sizeof conf.plus3_rom_path, ininame);
-	GetPrivateProfileString(rom, "QUORUM", nil, conf.quorum_rom_path, sizeof conf.quorum_rom_path, ininame);
-	GetPrivateProfileString(rom, "TSL", nil, conf.tsl_rom_path, sizeof conf.tsl_rom_path, ininame);
-	GetPrivateProfileString(rom, "LSY", nil, conf.lsy_rom_path, sizeof conf.lsy_rom_path, ininame);
-	GetPrivateProfileString(rom, "PHOENIX", nil, conf.phoenix_rom_path, sizeof conf.phoenix_rom_path, ininame);
+	conf.pent_rom_path = get_path_value("rom.PENTAGON", "");
+	conf.atm1_rom_path = get_path_value("rom.ATM1", "");
+	conf.atm2_rom_path = get_path_value("rom.ATM2", "");
+	conf.atm3_rom_path = get_path_value("rom.ATM3", "");
+	conf.scorp_rom_path = get_path_value("rom.SCORP", "");
+	conf.prof_rom_path = get_path_value("rom.PROFROM", "");
+	conf.gmx_rom_path = get_path_value("rom.GMX", "");
+	conf.profi_rom_path = get_path_value("rom.PROFI", "");
+	conf.kay_rom_path = get_path_value("rom.KAY", "");
+	conf.plus3_rom_path = get_path_value("rom.PLUS3", "");
+	conf.quorum_rom_path = get_path_value("rom.QUORUM", "");
+	conf.tsl_rom_path = get_path_value("rom.TSL", "");
+	conf.lsy_rom_path = get_path_value("rom.LSY", "");
+	conf.phoenix_rom_path = get_path_value("rom.PHOENIX", "");
+	conf.gs_rom_path = get_path_value("rom.GS", "");
+	conf.moonsound_rom_path = get_path_value("rom.MOONSOUND", "");
 
-#ifdef MOD_GSZ80
-	GetPrivateProfileString(rom, "GS", nil, conf.gs_rom_path, sizeof conf.gs_rom_path, ininame);
-	addpath(conf.gs_rom_path);
-#endif
 
-	GetPrivateProfileString(rom, "MOONSOUND", nil, conf.moonsound_rom_path, sizeof conf.moonsound_rom_path, ininame);
-	addpath(conf.moonsound_rom_path);
-
-	addpath(conf.pent_rom_path);
-	addpath(conf.atm1_rom_path);
-	addpath(conf.atm2_rom_path);
-	addpath(conf.atm3_rom_path);
-	addpath(conf.scorp_rom_path);
-	addpath(conf.prof_rom_path);
-	addpath(conf.gmx_rom_path);
-	addpath(conf.profi_rom_path);
-	addpath(conf.kay_rom_path);
-	addpath(conf.plus3_rom_path);
-	addpath(conf.quorum_rom_path);
-	addpath(conf.tsl_rom_path);
-	addpath(conf.lsy_rom_path);
-	addpath(conf.phoenix_rom_path);
-	//[vv]   addpath(conf.kay_rom_path);
-
-	GetPrivateProfileString(rom, "ROMSET", "default", line, sizeof line, ininame);
-	if (*line)
-		load_romset(&conf, line), conf.use_romset = 1;
+	auto tmp = get_string_value("rom.ROMSET", "default");
+	if (!tmp.empty()) {
+		load_romset(tmp);
+		conf.use_romset = true;
+	}
 	else
-		conf.use_romset = 0;
+		conf.use_romset = false;
 
-	conf.smuc = GetPrivateProfileInt(misc, "SMUC", 0, ininame);
+	conf.smuc = get_int_value("misc.SMUC", 0) != 0;
 
 	// CMOS
-	GetPrivateProfileString(misc, "CMOS", nil, line, sizeof line, ininame);
+	tmp = get_string_value("misc.CMOS", "");
 	conf.cmos = 0;
-	if (!strcmp(line, "DALLAS")) conf.cmos = 1;
-	if (!strcmp(line, "512Bu1")) conf.cmos = 2;
+	if (tmp == "DALLAS") conf.cmos = 1;
+	if (tmp == "512Bu1") conf.cmos = 2;
 
 	// ULA+
-	GetPrivateProfileString(misc, "ULAPLUS", nil, line, sizeof line, ininame);
+	tmp = Poco::toUpper(get_string_value("misc.ULAPLUS", ""));
 	conf.ulaplus = UPLS_NONE;
-	if (!strcmp(line, "TYPE1")) conf.ulaplus = UPLS_TYPE1;
-	if (!strcmp(line, "TYPE2")) conf.ulaplus = UPLS_TYPE2;
+	if (tmp == "TYPE1") conf.ulaplus = UPLS_TYPE1;
+	if (tmp == "TYPE2") conf.ulaplus = UPLS_TYPE2;
 
 	// TS VDAC
-	GetPrivateProfileString(misc, "TS_VDAC", nil, line, sizeof line, ininame);
+	tmp = get_string_value("misc.TS_VDAC", "");
 	comp.ts.vdac = TS_VDAC_OFF;
 	for (i = 0; i < TS_VDAC_MAX; i++)
-		if (strnicmp(line, ts_vdac_names[i].nick, strlen(ts_vdac_names[i].nick)) == 0)
+		if (Poco::toLower(tmp) == Poco::toLower(ts_vdac_names[i].nick))
 		{
 			comp.ts.vdac = ts_vdac_names[i].value;
 			break;
 		}
 
 	// TS VDAC2 (FT812)
-	comp.ts.vdac2 = (GetPrivateProfileInt(misc, "TS_VDAC2", 0, ininame) != 0);
+	comp.ts.vdac2 = get_int_value("misc.TS_VDAC2", 0) != 0;
 
 	// Cache
-	conf.cache = GetPrivateProfileInt(misc, "Cache", 0, ininame);
+	conf.cache = u8(get_int_value("misc.Cache", 0));
 	if (conf.cache && conf.cache != 16 && conf.cache != 32) conf.cache = 0;
 
-	GetPrivateProfileString(misc, "HIMEM", nil, line, sizeof line, ininame);
+	tmp = get_string_value("misc.HIMEM", "");
 	conf.memmodel = mem_model::pentagon;
-	for (i = 0; i < (int)mem_model::n_models; i++)
-		if (!strnicmp(line, memmodel[i].shortname, strlen(memmodel[i].shortname)))
+	for (i = 0; i < int(mem_model::n_models); i++)
+		if (Poco::toLower(tmp) == Poco::toLower(memmodel[i].shortname))
 		{
 			conf.memmodel = memmodel[i].model;
 			break;
 		}
 
-	conf.ramsize = GetPrivateProfileInt(misc, "RamSize", 128, ininame);
+	conf.ramsize = get_int_value("misc.RamSize", 128);
 
-	GetPrivateProfileString(misc, "DIR", nil, conf.workdir, sizeof conf.workdir, ininame);
+	tmp = get_string_value("misc.DIR", ".");
 
-	GetCurrentDirectory(_countof(line), line);
-	SetCurrentDirectory(conf.workdir);
-	GetCurrentDirectory(_countof(temp.snap_dir), temp.snap_dir);
-	SetCurrentDirectory(line);
-	strcpy(temp.rom_dir, temp.snap_dir);
-	strcpy(temp.hdd_dir, temp.snap_dir);
+	conf.workdir = Poco::Path(root_path).append(tmp).toString();
+	temp.snap_dir = conf.workdir;
+	temp.rom_dir = conf.workdir;
+	temp.hdd_dir = conf.workdir;
 
 	conf.reset_rom = rom_mode::RM_SOS;
-	GetPrivateProfileString(misc, "RESET", nil, line, sizeof line, ininame);
-	if (!strnicmp(line, "DOS", 3)) conf.reset_rom = rom_mode::RM_DOS;
-	if (!strnicmp(line, "MENU", 4)) conf.reset_rom = rom_mode::RM_128;
-	if (!strnicmp(line, "SYS", 3)) conf.reset_rom = rom_mode::RM_SYS;
 
-	GetPrivateProfileString(misc, "Modem", nil, line, sizeof line, ininame);
+	tmp = Poco::toUpper(get_string_value("misc.RESET", ""));
+	if (tmp == "DOS")  conf.reset_rom = rom_mode::RM_DOS;
+	if (tmp == "MENU") conf.reset_rom = rom_mode::RM_128;
+	if (tmp == "SYS")  conf.reset_rom = rom_mode::RM_SYS;
+
+	tmp = "";
 	conf.modem_port = 0;
-	sscanf(line, "COM%d", &conf.modem_port);
+	if (rnum.extract(get_string_value("misc.Modem", "None"), tmp, 0) == 1)
+		conf.modem_port = Poco::NumberParser::parse(tmp);
 
-	GetPrivateProfileString(misc, "ZiFi", nil, line, sizeof line, ininame);
+	tmp = "";
 	conf.zifi_port = 0;
-	sscanf(line, "COM%d", &conf.zifi_port);
+	if (rnum.extract(get_string_value("misc.ZiFi", "None"), tmp, 0) == 1)
+		conf.zifi_port = Poco::NumberParser::parse(tmp);
 
 	//conf.paper = GetPrivateProfileInt(ula, "Paper", 17989, ininame);
 	conf.intstart = GetPrivateProfileInt(ula, "intstart", 0, ininame);
@@ -836,19 +828,17 @@ void load_config(const Poco::Path& root_path, const Poco::Util::LayeredConfigura
 
 	if (conf.gs_type == 1) // z80gs mode
 	{
-		GetPrivateProfileString(ngs, "SDCARD", 0, conf.ngs_sd_card_path, _countof(conf.ngs_sd_card_path), ininame);
-		addpath(conf.ngs_sd_card_path);
-		if (conf.ngs_sd_card_path[0])
-			printf("NGS SDCARD=`%s'\n", conf.ngs_sd_card_path);
+		conf.ngs_sd_card_path = get_path_value("ngs.SDCARD", "");
+		if (!conf.ngs_sd_card_path.empty())
+			printf("NGS SDCARD=`%s'\n", conf.ngs_sd_card_path.c_str());
 	}
 
-	conf.zc = GetPrivateProfileInt(misc, "ZC", 0, ininame);
+	conf.zc = get_int_value("misc.ZC", 0) != 0;
 	if (conf.zc)
 	{
-		GetPrivateProfileString(zc, "SDCARD", 0, conf.zc_sd_card_path, _countof(conf.zc_sd_card_path), ininame);
-		addpath(conf.zc_sd_card_path);
-		if (conf.zc_sd_card_path[0])
-			printf("ZC SDCARD=`%s'\n", conf.zc_sd_card_path);
+		conf.zc_sd_card_path = get_path_value("zc.SDCARD", "");
+		if (!conf.zc_sd_card_path.empty())
+			printf("ZC SDCARD=`%s'\n", conf.zc_sd_card_path.c_str());
 		conf.sd_delay = GetPrivateProfileInt(zc, "SDDelay", 1000, ininame);
 	}
 
@@ -899,7 +889,6 @@ void autoload()
 
 void apply_memory()
 {
-#ifdef MOD_GSZ80
 	if (conf.gs_type == 1)
 	{
 		if (load_rom(conf.gs_rom_path, ROM_GS_M, 32) != 512) // 512k rom
@@ -908,9 +897,8 @@ void apply_memory()
 			conf.gs_type = 0;
 		}
 	}
-#endif
 
-	zxmmoonsound.load_rom(conf.moonsound_rom_path);
+	zxmmoonsound.load_rom(conf.moonsound_rom_path.c_str());
 
 	if (conf.ramsize != 128 && conf.ramsize != 256 && conf.ramsize != 512 &&
 		conf.ramsize != 1024 && conf.ramsize != 2048 && conf.ramsize != 4096)
@@ -1023,7 +1011,7 @@ void apply_memory()
 		}
 		else
 		{
-			const char* romname = nullptr;
+			std::string romname{};
 			switch (conf.memmodel)
 			{
 			case mem_model::pentagon: romname = conf.pent_rom_path; break;
@@ -1124,13 +1112,13 @@ void applyconfig()
 	if (conf.gs_type == 1)
 	{
 		SdCard.Close();
-		SdCard.Open(conf.ngs_sd_card_path);
+		SdCard.Open(conf.ngs_sd_card_path.c_str());
 	}
 
 	if (conf.zc)
 	{
 		Zc.Close();
-		Zc.Open(conf.zc_sd_card_path);
+		Zc.Open(conf.zc_sd_card_path.c_str());
 	}
 
 	setpal(0);
@@ -1293,7 +1281,7 @@ void loadzxkeys(CONFIG* conf)
 								inports[DIK_RMENU].port1 = active_zxk->zxk[k].port;
 								inports[DIK_RMENU].mask1 = active_zxk->zxk[k].mask;
 								break;
-							default: ;
+							default:;
 							}
 							break;
 						}
@@ -1331,7 +1319,7 @@ void loadzxkeys(CONFIG* conf)
 								inports[DIK_RMENU].port2 = active_zxk->zxk[k].port;
 								inports[DIK_RMENU].mask2 = active_zxk->zxk[k].mask;
 								break;
-							default: ;
+							default:;
 							}
 							break;
 						}

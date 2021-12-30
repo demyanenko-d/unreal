@@ -52,7 +52,7 @@ ZXMMoonSound::ZXMMoonSound() :
 	reset();
 }
 
-int ZXMMoonSound::load_rom(char *path)
+int ZXMMoonSound::load_rom(const char *path)
 {
 	FILE *fp = fopen( path, "rb" );
 	if ( !fp )
